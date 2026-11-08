@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desafío Visual de Fracciones - Niveles 1 y 2</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Lexend:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            touch-action: manipulation;
+        }
+        h1, h2, h3, .font-heading {
+            font-family: 'Lexend', sans-serif;
+        }
+        canvas {
+            touch-action: none;
+        }
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+            40%, 60% { transform: translate3d(6px, 0, 0); }
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col text-slate-800 antialiased selection:bg-indigo-500 selection:text-white">
+
+    <!-- Header / Navbar con Racha de Progreso e Indicador de Nivel -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-start">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center text-white shadow-md shadow-indigo-200">
+                        <i class="fa-solid fa-trophy text-lg"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h1 class="text-base sm:text-lg font-bold text-slate-900 leading-tight">Desafío de Fracciones</h1>
+                            <span id="level-badge-header" class="px-2.5 py-0.5 bg-indigo-100 text-indigo-700 font-extrabold text-xs rounded-full border border-indigo-200">
+                                Nivel 1
+                            </span>
+                        </div>
+                        <p class="text-xs font-medium text-slate-500">Completa 10 aciertos seguidos sin fallar</p>
+                    </div>
+                </div>
+
+                <!-- Botón de Instructivo Móvil -->
+                <button onclick="toggleHowToPlay()" class="sm:hidden px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl border border-indigo-200 text-xs font-bold flex items-center gap-1.5 shrink-0">
+                    <i class="fa-solid fa-circle-question"></i> Ayuda
+                </button>
+            </div>
+
+            <!-- Contador de Racha y Controles -->
+            <div class="w-full sm:w-auto flex items-center gap-3 justify-between sm:justify-end">
+                <div class="flex items-center gap-3 bg-slate-100 p-2 rounded-xl border border-slate-200">
+                    <div class="flex flex-col">
+                        <div class="flex justify-between items-center text-xs font-bold text-slate-700 mb-1">
+                            <span>Racha Nivel <span id="level-num-counter">1</span>:</span>
+                            <span id="streak-counter" class="text-indigo-600 font-extrabold text-sm ml-2">0 / 10</span>
+                        </div>
+                        <div class="w-40 sm:w-56 h-3 bg-slate-200 rounded-full overflow-hidden border border-slate-300">
+                            <div id="streak-progress-bar" class="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 w-0 transition-all duration-500"></div>
+                        </div>
+                    </div>
+                    <button onclick="restartChallenge()" class="px-2.5 py-2 bg-white hover:bg-slate-50 text-slate-600 rounded-lg border border-slate-200 text-xs font-semibold shadow-xs transition-all" title="Reiniciar Desafío">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                    </button>
+                </div>
+
+                <!-- Botón de Instructivo Desktop -->
+                <button onclick="toggleHowToPlay()" class="hidden sm:flex px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl border border-indigo-200 text-xs font-bold items-center gap-1.5 shrink-0 transition-all">
+                    <i class="fa-solid fa-circle-question text-base"></i> Instructivo
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 flex flex-col gap-4 sm:gap-6">
+
+        <!-- Banner de Error y Reinicio por Equivocación -->
+        <div id="error-alert" class="hidden bg-red-50 border-2 border-red-300 text-red-900 p-3 sm:p-4 rounded-2xl flex items-center justify-between gap-3 shadow-md shake">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-red-500 text-white flex items-center justify-center font-bold shrink-0">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </div>
+                <div>
+                    <h4 class="font-bold text-sm text-red-950">¡Upps! Te has equivocado</h4>
+                    <p class="text-xs text-red-700" id="error-msg">La cantidad de celdas seleccionadas no fue correcta. La racha de este nivel se ha reiniciado a 0/10.</p>
+                </div>
+            </div>
+            <button onclick="closeErrorAlert()" class="px-3 py-1.5 bg-red-600 text-white rounded-xl text-xs font-bold hover:bg-red-700 transition-all shrink-0">
+                Intentar Nuevo
+            </button>
+        </div>
+
+        <!-- Tarjeta del Problema Actual -->
+        <section class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex flex-wrap items-center gap-3">
+                <span id="level-indicator-tag" class="px-3 py-1.5 bg-indigo-600 text-white font-black text-xs rounded-xl tracking-wider">
+                    NIVEL 1
+                </span>
+                <span id="operation-badge" class="px-3 py-1.5 bg-indigo-100 text-indigo-800 font-extrabold text-xs rounded-xl uppercase tracking-wider">
+                    Ejercicio 1/10: SUMA
+                </span>
+                <div class="flex items-center gap-2 font-heading font-extrabold text-xl sm:text-2xl text-slate-800 ml-2">
+                    <span id="fracA-math" class="text-blue-600">1/2</span>
+                    <span id="op-symbol" class="text-slate-400">+</span>
+                    <span id="fracB-math" class="text-amber-600">1/4</span>
+                    <span>=</span>
+                    <span id="target-math" class="text-indigo-600 bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-xl">?</span>
+                </div>
+            </div>
+
+            <!-- Indicación de Instrucción táctil -->
+            <div class="text-xs text-slate-500 bg-slate-50 px-3.5 py-2 rounded-xl border border-slate-200 flex items-center gap-2 w-full sm:w-auto text-center sm:text-left justify-center">
+                <i class="fa-solid fa-hand-pointer text-indigo-500 text-sm animate-bounce"></i>
+                <span id="instruction-text">Toca o arrastra los cuadritos coloreados a la retícula resultado.</span>
+            </div>
+        </section>
+
+        <!-- Área Gráfica Principal (3 Canvas) -->
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+            
+            <!-- Lienzo Fracción A -->
+            <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex flex-col items-center">
+                <div class="w-full flex items-center justify-between mb-2">
+                    <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-blue-600"></span> 
+                        Fracción A (Vertical)
+                    </h3>
+                    <span id="label-canvas-a" class="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">1/2</span>
+                </div>
+                <div class="relative w-full aspect-square max-w-[260px] sm:max-w-[300px] flex items-center justify-center bg-slate-50 rounded-xl p-2 border border-slate-100">
+                    <canvas id="canvasA" class="w-full h-full rounded-lg shadow-sm"></canvas>
+                </div>
+                <p id="desc-a" class="text-xs text-slate-500 mt-2 text-center font-medium">
+                    Dividido en franjas verticales.
+                </p>
+            </div>
+
+            <!-- Lienzo Fracción B -->
+            <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex flex-col items-center">
+                <div class="w-full flex items-center justify-between mb-2">
+                    <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-amber-500"></span> 
+                        Fracción B (Horizontal)
+                    </h3>
+                    <span id="label-canvas-b" class="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md">1/4</span>
+                </div>
+                <div class="relative w-full aspect-square max-w-[260px] sm:max-w-[300px] flex items-center justify-center bg-slate-50 rounded-xl p-2 border border-slate-100">
+                    <canvas id="canvasB" class="w-full h-full rounded-lg shadow-sm"></canvas>
+                </div>
+                <p id="desc-b" class="text-xs text-slate-500 mt-2 text-center font-medium">
+                    Dividido en franjas horizontales.
+                </p>
+            </div>
+
+            <!-- Lienzo Resultado Interactivo -->
+            <div class="bg-white rounded-2xl p-4 border-2 border-emerald-300 shadow-lg flex flex-col items-center relative lg:col-span-1">
+                <div class="w-full flex items-center justify-between mb-2">
+                    <h3 class="font-bold text-emerald-950 text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-square-check text-emerald-600"></i>
+                        Lienzo Resultado (Haz clic/Arrastra)
+                    </h3>
+                    <span id="label-canvas-fusion" class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">0 / 8 Celdas</span>
+                </div>
+
+                <div class="relative w-full aspect-square max-w-[320px] sm:max-w-[360px] flex items-center justify-center bg-emerald-50/50 rounded-xl p-2 border border-emerald-200 touch-none shadow-inner">
+                    <canvas id="canvasFusion" class="w-full h-full rounded-lg shadow-sm cursor-pointer"></canvas>
+                </div>
+
+                <!-- Botón de Confirmación / Enviar Respuesta -->
+                <div class="w-full mt-3 flex items-center gap-2">
+                    <button onclick="submitAnswer()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-sm rounded-xl transition-all shadow-md shadow-emerald-200 flex items-center justify-center gap-2 min-h-[44px]">
+                        <i class="fa-solid fa-circle-check text-base"></i> Confirmar Respuesta
+                    </button>
+                    <button onclick="resetCurrentGrid()" class="px-3 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold text-xs rounded-xl transition-all border border-slate-200 min-h-[44px]" title="Limpiar selección">
+                        <i class="fa-solid fa-eraser text-base"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- MODAL DE INSTRUCTIVO DE USO -->
+        <div id="howto-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="glass-panel rounded-3xl p-6 sm:p-7 max-w-lg w-full space-y-4 border border-indigo-500/30 max-h-[90vh] overflow-y-auto text-left shadow-2xl">
+                <div class="flex justify-between items-center border-b border-slate-200 pb-3">
+                    <h3 class="font-display text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <i class="fa-solid fa-book-open text-indigo-600"></i> Instructivo del Simulador
+                    </h3>
+                    <button onclick="toggleHowToPlay()" class="text-slate-400 hover:text-slate-700 text-lg">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <div class="space-y-3.5 text-xs text-slate-600 leading-relaxed">
+                    <div class="bg-indigo-50/70 p-3.5 rounded-2xl border border-indigo-100">
+                        <p class="font-bold text-indigo-900 mb-1"><i class="fa-solid fa-bullseye mr-1"></i> Objetivo Principal</p>
+                        <p>Aprende y practica la suma y resta de fracciones con distinto denominador mediante áreas geométricas interactivas. Debes completar una racha de <strong>10 aciertos consecutivos</strong> para superar cada nivel.</p>
+                    </div>
+
+                    <div class="space-y-2">
+                        <p class="font-bold text-slate-900"><i class="fa-solid fa-list-check mr-1"></i> ¿Cómo resolver los ejercicios?</p>
+                        <ul class="list-disc pl-4 space-y-1.5 text-slate-600">
+                            <li><strong>Fracción A y B:</strong> Observa las representaciones gráficas y sus denominadores para entender el área total dividida.</li>
+                            <li><strong>Lienzo Resultado:</strong> Toca o haz clic en las celdas del cuadro inferior para activarlas o desactivarlas.</li>
+                            <li><strong>Suma (+):</strong> Selecciona la cantidad total de celdas equivalentes combinadas entre ambas fracciones.</li>
+                            <li><strong>Resta (-):</strong> Selecciona las celdas resultantes de quitarle la segunda fracción a la primera.</li>
+                            <li><strong>Confirmar:</strong> Presiona el botón verde de confirmación para validar tu selección. Si te equivocas, la racha del nivel se reiniciará a 0.</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-amber-50/70 p-3.5 rounded-2xl border border-amber-100 space-y-1">
+                        <p class="font-bold text-amber-900"><i class="fa-solid fa-layer-group mr-1"></i> Diferencia entre Niveles:</p>
+                        <p class="text-[11px] text-slate-600"><strong>Nivel 1:</strong> Muestra las líneas de guía cruzadas en los rectángulos para facilitar el conteo visual.</p>
+                        <p class="text-[11px] text-slate-600"><strong>Nivel 2 (Avanzado):</strong> Oculta las líneas secundarias de guía; debes calcular mentalmente la equivalencia de común denominador.</p>
+                    </div>
+                </div>
+
+                <button onclick="toggleHowToPlay()" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl text-xs transition-all shadow-lg shadow-indigo-200">
+                    ¡Entendido, Comenzar Desafío!
+                </button>
+            </div>
+        </div>
+
+        <!-- Modal de Felicitación / Pasar al Nivel 2 -->
+        <div id="level-complete-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl text-center flex flex-col items-center border border-slate-100">
+                <div class="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center text-amber-500 text-4xl mb-4 shadow-inner">
+                    <i class="fa-solid fa-medal"></i>
+                </div>
+                <h2 class="text-2xl font-black text-slate-900 mb-2">¡NIVEL 1 SUPERADO!</h2>
+                <p class="text-sm text-slate-600 mb-6"> Has completado los 10 ejercicios del Nivel 1. ¿Estás listo para el <strong>Nivel 2 (Desafío Avanzado)</strong> donde las divisiones cruzadas en las fracciones estarán ocultas?</p>
+                <button onclick="startLevel2()" class="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold text-base rounded-2xl shadow-lg hover:shadow-xl transition-all">
+                    ¡Comenzar Nivel 2! <i class="fa-solid fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Banner de Celebración por Completar Nivel 2 (Juego Finalizado) -->
+        <div id="celebration-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl text-center flex flex-col items-center border border-slate-100">
+                <div class="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 text-4xl mb-4 shadow-inner">
+                    <i class="fa-solid fa-crown"></i>
+                </div>
+                <h2 class="text-2xl font-black text-slate-900 mb-2">¡MAESTRO DE FRACCIONES!</h2>
+                <p class="text-sm text-slate-600 mb-6"> ¡Felicidades! Has superado con éxito tanto el Nivel 1 como el Nivel 2 sin cometer errores.</p>
+                <button onclick="restartChallenge()" class="w-full py-3.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold text-base rounded-2xl shadow-lg hover:shadow-xl transition-all">
+                    Reiniciar Juego Completo
+                </button>
+            </div>
+        </div>
+
+        <!-- Explicación Didáctica Básica -->
+        <section class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm">
+            <h3 class="text-sm font-bold text-slate-900 mb-2 flex items-center gap-2">
+                <i class="fa-solid fa-lightbulb text-amber-500"></i> ¿Cómo funciona el Nivel 2?
+            </h3>
+            <p class="text-xs text-slate-600 leading-relaxed">
+                En el <strong>Nivel 1</strong> ves las líneas punteadas cruzadas para guiarte. En el <strong>Nivel 2</strong>, esas líneas se ocultan en los rectángulos de origen. Debes calcular cuántos cuadritos equivale cada fracción multiplicando numeradores por los denominadores opuestos y trasladarlos al Lienzo Resultado.
+            </p>
+        </section>
+
+    </main>
+
+    <script>
+        // ESTADO DE LA APLICACIÓN
+        const state = {
+            level: 1,             // Nivel actual: 1 (Fácil con sub-divisiones) o 2 (Avanzado sin sub-divisiones)
+            streak: 0,            // Racha actual de aciertos (0 a 10 por nivel)
+            isSum: true,          // true: SUMA, false: RESTA
+            numA: 1, denA: 2,
+            numB: 1, denB: 4,
+            gridState: [],        // Matriz de celdas del lienzo resultado (0: Vacío, 1: Marcado)
+            subNumA: 0,
+            subNumB: 0,
+            commonDenom: 0,
+            targetCells: 0,       // Número de celdas exactas que debe tener el lienzo resultado
+            usedOperations: new Set() // Registro para evitar repetir ejercicios en la racha
+        };
+
+        // ELEMENTOS DOM
+        const el = {
+            streakCounter: document.getElementById('streak-counter'),
+            streakProgressBar: document.getElementById('streak-progress-bar'),
+            levelBadgeHeader: document.getElementById('level-badge-header'),
+            levelNumCounter: document.getElementById('level-num-counter'),
+            levelIndicatorTag: document.getElementById('level-indicator-tag'),
+            errorAlert: document.getElementById('error-alert'),
+            errorMsg: document.getElementById('error-msg'),
+            operationBadge: document.getElementById('operation-badge'),
+            fracAMath: document.getElementById('fracA-math'),
+            fracBMath: document.getElementById('fracB-math'),
+            opSymbol: document.getElementById('op-symbol'),
+            targetMath: document.getElementById('target-math'),
+            instructionText: document.getElementById('instruction-text'),
+            labelCanvasA: document.getElementById('label-canvas-a'),
+            labelCanvasB: document.getElementById('label-canvas-b'),
+            labelCanvasFusion: document.getElementById('label-canvas-fusion'),
+            descA: document.getElementById('desc-a'),
+            descB: document.getElementById('desc-b'),
+            howtoModal: document.getElementById('howto-modal'),
+            levelCompleteModal: document.getElementById('level-complete-modal'),
+            celebrationModal: document.getElementById('celebration-modal')
+        };
+
+        const canvasA = document.getElementById('canvasA');
+        const canvasB = document.getElementById('canvasB');
+        const canvasFusion = document.getElementById('canvasFusion');
+
+        const ctxA = canvasA.getContext('2d');
+        const ctxB = canvasB.getContext('2d');
+        const ctxFusion = canvasFusion.getContext('2d');
+
+        const COLORS = {
+            fillA: 'rgba(37, 99, 235, 0.75)',
+            borderA: '#1d4ed8',
+            fillB: 'rgba(245, 158, 11, 0.75)',
+            borderB: '#d97706',
+            fillResult: 'rgba(16, 185, 129, 0.85)',
+            borderResult: '#059669',
+            emptyGrid: 'rgba(241, 245, 249, 0.9)',
+            gridLines: 'rgba(148, 163, 184, 0.5)'
+        };
+
+        // INICIALIZACIÓN
+        window.addEventListener('DOMContentLoaded', () => {
+            setupDragAndDrop();
+            resizeCanvas();
+            generateNewExercise();
+        });
+
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            render();
+        });
+
+        function resizeCanvas() {
+            [canvasA, canvasB, canvasFusion].forEach(canvas => {
+                const rect = canvas.getBoundingClientRect();
+                const dpr = window.devicePixelRatio || 1;
+                canvas.width = rect.width * dpr;
+                canvas.height = rect.height * dpr;
+            });
+        }
+
+        // CONTROL DE MODAL INSTRUCTIVO
+        function toggleHowToPlay() {
+            el.howtoModal.classList.toggle('hidden');
+        }
+
+        // GENERADOR DE EJERCICIOS CON HISTORIAL ANTI-REPETICIÓN Y 5 SUMAS / 5 RESTAS
+        function generateNewExercise() {
+            // Asegurar 5 sumas primero y 5 restas después por nivel
+            state.isSum = state.streak < 5;
+
+            const denominators = [2, 3, 4, 5, 6];
+            let foundValid = false;
+            let attempts = 0;
+
+            while (!foundValid && attempts < 100) {
+                attempts++;
+                const dA = denominators[Math.floor(Math.random() * denominators.length)];
+                const dB = denominators[Math.floor(Math.random() * denominators.length)];
+                let nA, nB;
+
+                if (state.isSum) {
+                    nA = Math.floor(Math.random() * (dA - 1)) + 1;
+                    const maxSubNumB = (dA * dB) - (nA * dB);
+                    const maxNumB = Math.floor(maxSubNumB / dA);
+                    if (maxNumB < 1) {
+                        nA = 1;
+                        const newMax = Math.floor(((dA * dB) - dB) / dA);
+                        nB = Math.max(1, Math.floor(Math.random() * newMax) + 1);
+                    } else {
+                        nB = Math.floor(Math.random() * maxNumB) + 1;
+                    }
+                } else {
+                    nA = Math.floor(Math.random() * (dA - 1)) + 1;
+                    const subA = nA * dB;
+                    const maxNumB = Math.floor((subA - 1) / dA);
+                    if (maxNumB < 1) {
+                        nA = dA;
+                        const newSubA = dA * dB;
+                        const newMax = Math.floor((newSubA - 1) / dA);
+                        nB = Math.max(1, Math.floor(Math.random() * newMax) + 1);
+                    } else {
+                        nB = Math.floor(Math.random() * maxNumB) + 1;
+                    }
+                }
+
+                const opKey = `${state.level}-${state.isSum ? '+' : '-'}-${nA}/${dA}-${nB}/${dB}`;
+                if (!state.usedOperations.has(opKey)) {
+                    state.usedOperations.add(opKey);
+                    state.numA = nA;
+                    state.denA = dA;
+                    state.numB = nB;
+                    state.denB = dB;
+                    foundValid = true;
+                }
+            }
+
+            // Cálculos de equivalencia
+            state.commonDenom = state.denA * state.denB;
+            state.subNumA = state.numA * state.denB;
+            state.subNumB = state.numB * state.denA;
+            state.targetCells = state.isSum ? (state.subNumA + state.subNumB) : (state.subNumA - state.subNumB);
+
+            resetGridState();
+            updateUI();
+        }
+
+        function resetGridState() {
+            state.gridState = Array(state.denB).fill(null).map(() => Array(state.denA).fill(0));
+        }
+
+        function resetCurrentGrid() {
+            resetGridState();
+            render();
+            updateProgressText();
+        }
+
+        function updateUI() {
+            // Nivel Header e Indicadores
+            el.levelBadgeHeader.textContent = `Nivel ${state.level}`;
+            el.levelNumCounter.textContent = `${state.level}`;
+            el.levelIndicatorTag.textContent = `NIVEL ${state.level}`;
+            el.levelIndicatorTag.className = state.level === 1 
+                ? 'px-3 py-1.5 bg-indigo-600 text-white font-black text-xs rounded-xl tracking-wider'
+                : 'px-3 py-1.5 bg-purple-600 text-white font-black text-xs rounded-xl tracking-wider';
+
+            // Actualizar Racha
+            el.streakCounter.textContent = `${state.streak} / 10`;
+            el.streakProgressBar.style.width = `${(state.streak / 10) * 100}%`;
+
+            // Operación actual
+            const typeStr = state.isSum ? 'SUMA' : 'RESTA';
+            el.operationBadge.textContent = `Ejercicio ${state.streak + 1}/10: ${typeStr}`;
+            el.operationBadge.className = state.isSum 
+                ? 'px-3 py-1.5 bg-indigo-100 text-indigo-800 font-extrabold text-xs rounded-xl uppercase tracking-wider'
+                : 'px-3 py-1.5 bg-amber-100 text-amber-800 font-extrabold text-xs rounded-xl uppercase tracking-wider';
+
+            el.fracAMath.textContent = `${state.numA}/${state.denA}`;
+            el.fracBMath.textContent = `${state.numB}/${state.denB}`;
+            el.opSymbol.textContent = state.isSum ? '+' : '-';
+
+            el.labelCanvasA.textContent = `${state.numA}/${state.denA}`;
+            el.labelCanvasB.textContent = `${state.numB}/${state.denB}`;
+
+            if (state.level === 1) {
+                el.descA.innerHTML = `${state.numA} de ${state.denA} franjas (${state.subNumA} celdas equivalentes)`;
+                el.descB.innerHTML = `${state.numB} de ${state.denB} franjas (${state.subNumB} celdas equivalentes)`;
+            } else {
+                el.descA.innerHTML = `${state.numA} de ${state.denA} franjas (Divisiones cruzadas ocultas)`;
+                el.descB.innerHTML = `${state.numB} de ${state.denB} franjas (Divisiones cruzadas ocultas)`;
+            }
+
+            if (state.isSum) {
+                el.instructionText.textContent = "Suma: Toca o arrastra para marcar las celdas equivalentes totales.";
+            } else {
+                el.instructionText.textContent = "Resta: Toca o arrastra para marcar las celdas resultantes tras la resta.";
+            }
+
+            updateProgressText();
+            render();
+        }
+
+        function updateProgressText() {
+            let filledCount = 0;
+            for (let r = 0; r < state.denB; r++) {
+                for (let c = 0; c < state.denA; c++) {
+                    if (state.gridState[r][c] !== 0) filledCount++;
+                }
+            }
+            el.labelCanvasFusion.textContent = `${filledCount} / ${state.commonDenom} Celdas`;
+        }
+
+        // CONFIRMAR RESPUESTA Y LÓGICA DE NIVELES
+        function submitAnswer() {
+            let filledCount = 0;
+            for (let r = 0; r < state.denB; r++) {
+                for (let c = 0; c < state.denA; c++) {
+                    if (state.gridState[r][c] !== 0) filledCount++;
+                }
+            }
+
+            if (filledCount === state.targetCells) {
+                state.streak++;
+                if (state.streak >= 10) {
+                    if (state.level === 1) {
+                        el.levelCompleteModal.classList.remove('hidden');
+                    } else {
+                        el.celebrationModal.classList.remove('hidden');
+                    }
+                } else {
+                    generateNewExercise();
+                }
+            } else {
+                triggerErrorReset(filledCount);
+            }
+        }
+
+        function startLevel2() {
+            state.level = 2;
+            state.streak = 0;
+            state.usedOperations.clear();
+            el.levelCompleteModal.classList.add('hidden');
+            generateNewExercise();
+        }
+
+        function triggerErrorReset(userCount) {
+            state.streak = 0;
+            el.errorMsg.textContent = `Pusiste ${userCount} celdas pero el resultado correcto era ${state.targetCells}. La racha del Nivel ${state.level} se ha reiniciado a 0/10.`;
+            el.errorAlert.classList.remove('hidden');
+            generateNewExercise();
+        }
+
+        function closeErrorAlert() {
+            el.errorAlert.classList.add('hidden');
+        }
+
+        function restartChallenge() {
+            state.level = 1;
+            state.streak = 0;
+            state.usedOperations.clear();
+            el.levelCompleteModal.classList.add('hidden');
+            el.celebrationModal.classList.add('hidden');
+            closeErrorAlert();
+            generateNewExercise();
+        }
+
+        // INTERACCIÓN TÁCTIL Y RATÓN
+        function setupDragAndDrop() {
+            function handleInteraction(evt) {
+                const rect = canvasFusion.getBoundingClientRect();
+                const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+                const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+
+                const x = clientX - rect.left;
+                const y = clientY - rect.top;
+
+                if (x < 0 || x > rect.width || y < 0 || y > rect.height) return;
+
+                const col = Math.floor((x / rect.width) * state.denA);
+                const row = Math.floor((y / rect.height) * state.denB);
+
+                if (row >= 0 && row < state.denB && col >= 0 && col < state.denA) {
+                    state.gridState[row][col] = state.gridState[row][col] === 0 ? 1 : 0;
+                    render();
+                    updateProgressText();
+                }
+            }
+
+            canvasFusion.addEventListener('mousedown', (e) => {
+                handleInteraction(e);
+            });
+
+            canvasFusion.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                handleInteraction(e);
+            }, { passive: false });
+        }
+
+        // RENDERIZADO GRÁFICO CANVAS
+        function render() {
+            renderCanvasA();
+            renderCanvasB();
+            renderCanvasFusion();
+        }
+
+        function renderCanvasA() {
+            const w = canvasA.width;
+            const h = canvasA.height;
+            const dpr = window.devicePixelRatio || 1;
+            ctxA.clearRect(0, 0, w, h);
+
+            const cellW = w / state.denA;
+            ctxA.fillStyle = COLORS.fillA;
+            ctxA.fillRect(0, 0, cellW * state.numA, h);
+
+            ctxA.strokeStyle = COLORS.borderA;
+            ctxA.lineWidth = 2 * dpr;
+            for (let i = 1; i < state.denA; i++) {
+                ctxA.beginPath();
+                ctxA.moveTo(i * cellW, 0);
+                ctxA.lineTo(i * cellW, h);
+                ctxA.stroke();
+            }
+
+            // Solo mostrar sub-divisiones horizontales en Nivel 1
+            if (state.level === 1) {
+                const cellH = h / state.denB;
+                ctxA.strokeStyle = COLORS.gridLines;
+                ctxA.lineWidth = 1 * dpr;
+                for (let j = 1; j < state.denB; j++) {
+                    ctxA.beginPath();
+                    ctxA.moveTo(0, j * cellH);
+                    ctxA.lineTo(w, j * cellH);
+                    ctxA.stroke();
+                }
+            }
+
+            ctxA.strokeStyle = '#94a3b8';
+            ctxA.lineWidth = 2 * dpr;
+            ctxA.strokeRect(0, 0, w, h);
+        }
+
+        function renderCanvasB() {
+            const w = canvasB.width;
+            const h = canvasB.height;
+            const dpr = window.devicePixelRatio || 1;
+            ctxB.clearRect(0, 0, w, h);
+
+            const cellH = h / state.denB;
+            ctxB.fillStyle = COLORS.fillB;
+            ctxB.fillRect(0, 0, w, cellH * state.numB);
+
+            ctxB.strokeStyle = COLORS.borderB;
+            ctxB.lineWidth = 2 * dpr;
+            for (let j = 1; j < state.denB; j++) {
+                ctxB.beginPath();
+                ctxB.moveTo(0, j * cellH);
+                ctxB.lineTo(w, j * cellH);
+                ctxB.stroke();
+            }
+
+            // Solo mostrar sub-divisiones verticales en Nivel 1
+            if (state.level === 1) {
+                const cellW = w / state.denA;
+                ctxB.strokeStyle = COLORS.gridLines;
+                ctxB.lineWidth = 1 * dpr;
+                for (let i = 1; i < state.denA; i++) {
+                    ctxB.beginPath();
+                    ctxB.moveTo(i * cellW, 0);
+                    ctxB.lineTo(i * cellW, h);
+                    ctxB.stroke();
+                }
+            }
+
+            ctxB.strokeStyle = '#94a3b8';
+            ctxB.lineWidth = 2 * dpr;
+            ctxB.strokeRect(0, 0, w, h);
+        }
+
+        function renderCanvasFusion() {
+            const w = canvasFusion.width;
+            const h = canvasFusion.height;
+            const dpr = window.devicePixelRatio || 1;
+
+            ctxFusion.clearRect(0, 0, w, h);
+
+            const cellW = w / state.denA;
+            const cellH = h / state.denB;
+
+            for (let r = 0; r < state.denB; r++) {
+                for (let c = 0; c < state.denA; c++) {
+                    const x = c * cellW;
+                    const y = r * cellH;
+                    const val = state.gridState[r][c];
+
+                    if (val !== 0) {
+                        ctxFusion.fillStyle = COLORS.fillResult;
+                        ctxFusion.fillRect(x, y, cellW, cellH);
+                    } else {
+                        ctxFusion.fillStyle = COLORS.emptyGrid;
+                        ctxFusion.fillRect(x, y, cellW, cellH);
+                    }
+                }
+            }
+
+            // El Lienzo Resultado SIEMPRE conserva su retícula cruzada completa en ambos niveles
+            ctxFusion.strokeStyle = '#059669';
+            ctxFusion.lineWidth = 1.5 * dpr;
+
+            for (let i = 1; i < state.denA; i++) {
+                ctxFusion.beginPath();
+                ctxFusion.moveTo(i * cellW, 0);
+                ctxFusion.lineTo(i * cellW, h);
+                ctxFusion.stroke();
+            }
+            for (let j = 1; j < state.denB; j++) {
+                ctxFusion.beginPath();
+                ctxFusion.moveTo(0, j * cellH);
+                ctxFusion.lineTo(w, j * cellH);
+                ctxFusion.stroke();
+            }
+
+            ctxFusion.strokeStyle = COLORS.borderResult;
+            ctxFusion.lineWidth = 3 * dpr;
+            ctxFusion.strokeRect(0, 0, w, h);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Laboratorio Visual Completo: Ley de los Signos</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        button {
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.92);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white antialiased">
+
+    <!-- HEADER / NAVIGATION -->
+    <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur-md sticky top-0 z-40 px-3 py-2.5 sm:px-4 sm:py-3">
+        <div class="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+            
+            <!-- Branding -->
+            <div class="flex items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-start">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-pink-500 flex items-center justify-center font-bold text-white shadow-lg shrink-0">
+                        <i class="fa-solid fa-calculator text-base sm:text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-display font-bold text-base sm:text-xl text-cyan-400 leading-none">Laboratorio de Signos</h1>
+                        <span class="text-[10px] sm:text-xs text-slate-400">Suma, Resta, Multiplicación y División</span>
+                    </div>
+                </div>
+
+                <!-- Botón instructivo visible en móvil en el header -->
+                <button onclick="toggleHowToPlay()" class="sm:hidden px-2.5 py-1.5 bg-indigo-900/60 hover:bg-indigo-800 text-indigo-200 rounded-xl border border-indigo-700/50 text-xs font-bold flex items-center gap-1.5">
+                    <i class="fa-solid fa-circle-question text-indigo-400"></i> Ayuda
+                </button>
+            </div>
+
+            <!-- Navegación y Botón Instructivo Desktop -->
+            <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end overflow-x-auto no-scrollbar">
+                <!-- Tabs de Operaciones -->
+                <nav class="flex bg-slate-950 p-1 rounded-2xl border border-slate-800 text-xs font-semibold overflow-x-auto no-scrollbar shrink-0">
+                    <button id="tab-mult" onclick="setOperation('*')" class="whitespace-nowrap px-3 py-2 rounded-xl bg-indigo-600 text-white transition-all text-center">
+                        <i class="fa-solid fa-xmark mr-1"></i> Mult
+                    </button>
+                    <button id="tab-div" onclick="setOperation('/')" class="whitespace-nowrap px-3 py-2 rounded-xl text-slate-400 hover:text-white transition-all text-center">
+                        <i class="fa-solid fa-divide mr-1"></i> Div
+                    </button>
+                    <button id="tab-suma" onclick="setOperation('+')" class="whitespace-nowrap px-3 py-2 rounded-xl text-slate-400 hover:text-white transition-all text-center">
+                        <i class="fa-solid fa-plus mr-1"></i> Suma
+                    </button>
+                    <button id="tab-resta" onclick="setOperation('-')" class="whitespace-nowrap px-3 py-2 rounded-xl text-slate-400 hover:text-white transition-all text-center">
+                        <i class="fa-solid fa-minus mr-1"></i> Resta
+                    </button>
+                </nav>
+
+                <!-- Botón Instructivo Desktop -->
+                <button onclick="toggleHowToPlay()" class="hidden sm:flex px-3 py-2 bg-indigo-900/50 hover:bg-indigo-800 text-indigo-200 rounded-xl border border-indigo-700/50 text-xs font-bold items-center gap-1.5 shrink-0 transition-all">
+                    <i class="fa-solid fa-circle-question text-indigo-400 text-sm"></i> Instructivo
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="max-w-5xl mx-auto px-3 py-4 sm:px-4 sm:py-6 flex-1 w-full space-y-4 sm:space-y-6">
+
+        <!-- PANEL DE CONTROL DE SIGNOS -->
+        <div class="bg-slate-900/60 border border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl text-center space-y-4 sm:space-y-6">
+            <div>
+                <span id="op-badge" class="text-[10px] sm:text-xs uppercase tracking-wider font-bold text-cyan-400 bg-cyan-950/60 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full border border-cyan-800/40">
+                    Modo: Multiplicación
+                </span>
+                <h2 id="op-title" class="font-display text-xl sm:text-3xl font-bold text-slate-100 mt-2">
+                    Multiplicación de Signos
+                </h2>
+                <p id="op-subtitle" class="text-xs sm:text-sm text-slate-400 mt-1 max-w-2xl mx-auto">
+                    Selecciona los signos de ambos términos para observar el comportamiento.
+                </p>
+            </div>
+
+            <!-- Controles de Signos (Adaptables a pantallas pequeñas) -->
+            <div class="grid grid-cols-12 gap-2 sm:gap-4 items-center max-w-lg mx-auto">
+                
+                <!-- 1er Signo -->
+                <div class="col-span-4 sm:col-span-4 bg-slate-950 border border-slate-800 p-2.5 sm:p-4 rounded-2xl space-y-1.5 sm:space-y-2">
+                    <span id="lbl-s1" class="block text-[9px] sm:text-[11px] text-slate-400 font-sans uppercase font-bold truncate">1er Término</span>
+                    <div class="grid grid-cols-2 gap-1 sm:gap-2">
+                        <button onclick="setSigns('+', null)" id="btn-s1-plus" class="py-2 rounded-xl bg-cyan-600 text-white font-bold transition-all text-sm sm:text-base">+</button>
+                        <button onclick="setSigns('-', null)" id="btn-s1-minus" class="py-2 rounded-xl bg-slate-800 text-slate-300 font-bold transition-all text-sm sm:text-base">-</button>
+                    </div>
+                </div>
+
+                <!-- Operador -->
+                <div class="col-span-1 sm:col-span-1 flex items-center justify-center">
+                    <span id="op-symbol" class="text-xl sm:text-2xl font-bold text-cyan-400 font-mono">×</span>
+                </div>
+
+                <!-- 2do Signo -->
+                <div class="col-span-4 sm:col-span-4 bg-slate-950 border border-slate-800 p-2.5 sm:p-4 rounded-2xl space-y-1.5 sm:space-y-2">
+                    <span id="lbl-s2" class="block text-[9px] sm:text-[11px] text-slate-400 font-sans uppercase font-bold truncate">2do Término</span>
+                    <div class="grid grid-cols-2 gap-1 sm:gap-2">
+                        <button onclick="setSigns(null, '+')" id="btn-s2-plus" class="py-2 rounded-xl bg-pink-600 text-white font-bold transition-all text-sm sm:text-base">+</button>
+                        <button onclick="setSigns(null, '-')" id="btn-s2-minus" class="py-2 rounded-xl bg-slate-800 text-slate-300 font-bold transition-all text-sm sm:text-base">-</button>
+                    </div>
+                </div>
+
+                <!-- Resultado -->
+                <div class="col-span-3 sm:col-span-3 bg-slate-950 border border-slate-800 p-2.5 sm:p-4 rounded-2xl space-y-1 sm:space-y-2 flex flex-col items-center justify-center">
+                    <span class="block text-[9px] sm:text-[11px] text-slate-400 font-sans uppercase font-bold truncate">Resultado</span>
+                    <span id="res-sign" class="text-xl sm:text-2xl font-bold font-mono text-emerald-400">+</span>
+                </div>
+            </div>
+
+            <!-- Explicación -->
+            <div id="explanation-card" class="bg-slate-950 border border-cyan-500/30 rounded-2xl p-3.5 sm:p-4 text-left space-y-1.5 sm:space-y-2 transition-all">
+                <div class="flex items-center gap-2 font-display font-bold text-cyan-400 text-xs sm:text-sm">
+                    <i class="fa-solid fa-circle-info"></i> <span id="exp-title">Explicación del Modelo</span>
+                </div>
+                <p id="exp-desc" class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                    Cargando explicación...
+                </p>
+            </div>
+        </div>
+
+        <!-- ESCENARIO GRÁFICO ANIMADO RESPONSIVO -->
+        <div class="bg-slate-900/60 border border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl space-y-3 sm:space-y-4">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1 sm:gap-0 text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">
+                <span><i class="fa-solid fa-map text-cyan-400 mr-1.5"></i> Recta Numérica Interactiva</span>
+                <span id="status-indicator" class="text-emerald-400 font-bold">Estado: Positivo (+)</span>
+            </div>
+
+            <!-- Contenedor adaptativo de la Recta Numérica -->
+            <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 relative h-36 sm:h-44 flex flex-col justify-center items-center overflow-hidden">
+                <!-- Recta numérica -->
+                <div class="absolute w-full h-1 bg-slate-800 flex justify-between px-6 sm:px-10">
+                    <span class="w-0.5 h-3 bg-slate-700 -top-1 relative"></span>
+                    <span class="w-0.5 h-3 bg-slate-700 -top-1 relative"></span>
+                    <span class="w-0.5 h-5 bg-cyan-500 -top-2 relative"></span>
+                    <span class="w-0.5 h-3 bg-slate-700 -top-1 relative"></span>
+                    <span class="w-0.5 h-3 bg-slate-700 -top-1 relative"></span>
+                </div>
+
+                <!-- Etiquetas de la recta -->
+                <div class="absolute text-[9px] sm:text-[10px] text-slate-500 font-mono bottom-2 w-full flex justify-around px-4 sm:px-8">
+                    <span>-6</span><span>-3</span><span class="text-cyan-400 font-bold">0</span><span>+3</span><span>+6</span>
+                </div>
+
+                <!-- Avatar animado (Escalado responsivo) -->
+                <div id="car-container" class="transition-all duration-500 transform flex flex-col items-center z-10">
+                    <div id="car-icon" class="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-xl text-lg sm:text-2xl transition-transform duration-300">
+                        <i id="avatar-fa-icon" class="fa-solid fa-car-side"></i>
+                    </div>
+                    <span id="car-label" class="text-[9px] sm:text-[10px] font-mono mt-1 px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 text-cyan-300 text-center max-w-[140px] sm:max-w-none truncate">
+                        Acción visual
+                    </span>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- MODAL DE INSTRUCTIVO / CÓMO USAR -->
+    <div id="howto-modal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass-panel rounded-3xl p-5 sm:p-6 max-w-lg w-full space-y-4 border border-indigo-500/40 max-h-[90vh] overflow-y-auto text-left shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="font-display text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-book-open text-indigo-400"></i> Instructivo del Laboratorio
+                </h3>
+                <button onclick="toggleHowToPlay()" class="text-slate-400 hover:text-white text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3.5 text-xs text-slate-300 leading-relaxed">
+                <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                    <p class="font-bold text-cyan-400 mb-1"><i class="fa-solid fa-bullseye"></i> ¿Para qué sirve este laboratorio?</p>
+                    <p>Esta herramienta visual ayuda a comprender el comportamiento de los signos matemáticos mediante analogías de movimiento y sentido en la recta numérica, evitando la memorización mecánica.</p>
+                </div>
+
+                <div class="space-y-2">
+                    <p class="font-bold text-indigo-300"><i class="fa-solid fa-list-check"></i> Pasos para usarlo:</p>
+                    <ul class="list-disc pl-4 space-y-1.5 text-slate-400">
+                        <li><strong>1. Elige una operación:</strong> Usa las pestañas superiores (<span class="text-white font-mono">Mult</span>, <span class="text-white font-mono">Div</span>, <span class="text-white font-mono">Suma</span>, <span class="text-white font-mono">Resta</span>) para cambiar de modalidad.</li>
+                        <li><strong>2. Combina los signos:</strong> Presiona los botones <span class="text-cyan-400 font-bold">+</span> o <span class="text-pink-400 font-bold">-</span> en el 1er Término y el 2do Término.</li>
+                        <li><strong>3. Analiza el resultado:</strong> Observa de inmediato el recuadro de <strong>Resultado</strong> (verde si es positivo, rosa si es negativo).</li>
+                        <li><strong>4. Interpreta la animación:</strong> Visualiza en la Recta Numérica Interactiva el desplazamiento del vehículo o avatar y lee la explicación detallada de cada combinación.</li>
+                    </ul>
+                </div>
+
+                <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 space-y-1">
+                    <p class="font-bold text-emerald-400"><i class="fa-solid fa-lightbulb"></i> Clave rápida de lectura:</p>
+                    <p class="text-[11px] text-slate-400"><strong>Signos iguales</strong> en multiplicación/división siempre dan <strong>positivo (+)</strong>.</p>
+                    <p class="text-[11px] text-slate-400"><strong>Signos diferentes</strong> en multiplicación/división siempre dan <strong>negativo (-)</strong>.</p>
+                </div>
+            </div>
+
+            <button onclick="toggleHowToPlay()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs transition-all shadow-lg">
+                ¡Entendido, Explorar Laboratorio!
+            </button>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="border-t border-slate-800 bg-slate-900/50 py-3 text-center text-[10px] sm:text-xs text-slate-500">
+        Laboratorio Didáctico de Matemáticas • Responsive Mobile Ready
+    </footer>
+
+    <!-- LÓGICA JAVASCRIPT -->
+    <script>
+        let currentOp = '*';
+        let sign1 = '+';
+        let sign2 = '+';
+
+        function toggleHowToPlay() {
+            const modal = document.getElementById('howto-modal');
+            modal.classList.toggle('hidden');
+        }
+
+        function setOperation(op) {
+            currentOp = op;
+            ['mult', 'div', 'suma', 'resta'].forEach(id => {
+                document.getElementById(`tab-${id}`).className = "whitespace-nowrap px-3 py-2 rounded-xl text-slate-400 hover:text-white transition-all text-center";
+            });
+
+            const opMap = { '*': 'mult', '/': 'div', '+': 'suma', '-': 'resta' };
+            document.getElementById(`tab-${opMap[op]}`).className = "whitespace-nowrap px-3 py-2 rounded-xl bg-indigo-600 text-white transition-all shadow text-center";
+
+            updateSimulation();
+        }
+
+        function setSigns(s1, s2) {
+            if (s1 !== null) sign1 = s1;
+            if (s2 !== null) sign2 = s2;
+            updateSimulation();
+        }
+
+        function updateSimulation() {
+            // Estilos de botones de signo
+            document.getElementById('btn-s1-plus').className = sign1 === '+' ? "py-2 rounded-xl bg-cyan-600 text-white font-bold transition-all text-sm sm:text-base shadow" : "py-2 rounded-xl bg-slate-800 text-slate-300 font-bold transition-all text-sm sm:text-base";
+            document.getElementById('btn-s1-minus').className = sign1 === '-' ? "py-2 rounded-xl bg-cyan-600 text-white font-bold transition-all text-sm sm:text-base shadow" : "py-2 rounded-xl bg-slate-800 text-slate-300 font-bold transition-all text-sm sm:text-base";
+
+            document.getElementById('btn-s2-plus').className = sign2 === '+' ? "py-2 rounded-xl bg-pink-600 text-white font-bold transition-all text-sm sm:text-base shadow" : "py-2 rounded-xl bg-slate-800 text-slate-300 font-bold transition-all text-sm sm:text-base";
+            document.getElementById('btn-s2-minus').className = sign2 === '-' ? "py-2 rounded-xl bg-pink-600 text-white font-bold transition-all text-sm sm:text-base shadow" : "py-2 rounded-xl bg-slate-800 text-slate-300 font-bold transition-all text-base";
+
+            const resSignElement = document.getElementById('res-sign');
+            const expTitle = document.getElementById('exp-title');
+            const expDesc = document.getElementById('exp-desc');
+            const carContainer = document.getElementById('car-container');
+            const carIcon = document.getElementById('car-icon');
+            const avatarFaIcon = document.getElementById('avatar-fa-icon');
+            const carLabel = document.getElementById('car-label');
+            const statusIndicator = document.getElementById('status-indicator');
+            const opSymbol = document.getElementById('op-symbol');
+            const opBadge = document.getElementById('op-badge');
+            const opTitle = document.getElementById('op-title');
+
+            // Adaptación gráfica a pantallas móviles vs escritorio
+            const isMobile = window.innerWidth < 640;
+            const shiftPos = isMobile ? 50 : 80;
+            const shiftFar = isMobile ? 65 : 95;
+
+            if (currentOp === '*') { // MULTIPLICACIÓN
+                opSymbol.innerText = '×';
+                opBadge.innerText = 'Modo: Multiplicación';
+                opTitle.innerText = 'Multiplicación de Signos';
+                avatarFaIcon.className = 'fa-solid fa-car-side';
+
+                const isPos = (sign1 === sign2);
+                resSignElement.innerText = isPos ? '+' : '-';
+                resSignElement.className = isPos ? "text-xl sm:text-2xl font-bold font-mono text-emerald-400" : "text-xl sm:text-2xl font-bold font-mono text-pink-400";
+
+                if (sign1 === '+' && sign2 === '+') {
+                    expTitle.innerText = "Amigo que avanza (+ × + = +)";
+                    expDesc.innerText = "El vehículo mira a la derecha (+) y avanza (+). Se desplaza hacia los positivos.";
+                    carContainer.style.transform = `translateX(${shiftPos}px)`;
+                    carIcon.style.transform = "scaleX(1)";
+                    carLabel.innerText = "Mira Derecha (+) | Avanza";
+                } else if (sign1 === '-' && sign2 === '+') {
+                    expTitle.innerText = "Enemigo que avanza (- × + = -)";
+                    expDesc.innerText = "El vehículo mira a la izquierda (-) y avanza (+). Se desplaza hacia los negativos.";
+                    carContainer.style.transform = `translateX(-${shiftPos}px)`;
+                    carIcon.style.transform = "scaleX(-1)";
+                    carLabel.innerText = "Mira Izquierda (-) | Avanza";
+                } else if (sign1 === '+' && sign2 === '-') {
+                    expTitle.innerText = "Amigo que retrocede (+ × - = -)";
+                    expDesc.innerText = "El vehículo mira a la derecha (+) y camina en reversa (-). Termina en el lado negativo.";
+                    carContainer.style.transform = `translateX(-${shiftPos}px)`;
+                    carIcon.style.transform = "scaleX(1)";
+                    carLabel.innerText = "Mira Derecha (+) | Reversa";
+                } else {
+                    expTitle.innerText = "Enemigo que retrocede (- × - = +)";
+                    expDesc.innerText = "El vehículo mira a la izquierda (-) y camina en reversa (-). Al dar marcha atrás hacia la izquierda, ¡avanza hacia la derecha (+)!";
+                    carContainer.style.transform = `translateX(${shiftPos}px)`;
+                    carIcon.style.transform = "scaleX(-1)";
+                    carLabel.innerText = "Mira Izquierda (-) | Reversa";
+                }
+
+            } else if (currentOp === '/') { // DIVISIÓN
+                opSymbol.innerText = '÷';
+                opBadge.innerText = 'Modo: División';
+                opTitle.innerText = 'División de Signos';
+                avatarFaIcon.className = 'fa-solid fa-boxes-packing';
+
+                const isPos = (sign1 === sign2);
+                resSignElement.innerText = isPos ? '+' : '-';
+                resSignElement.className = isPos ? "text-xl sm:text-2xl font-bold font-mono text-emerald-400" : "text-xl sm:text-2xl font-bold font-mono text-pink-400";
+
+                if (isPos) {
+                    expTitle.innerText = `Signos Iguales (${sign1} ÷ ${sign2} = +)`;
+                    expDesc.innerText = sign1 === '+' ? 
+                        "Repartir un capital (+) en grupos del mismo sentido (+) da cuotas positivas." :
+                        "Cancelar deudas (-) agrupadas en deudas (-) genera un saldo favorable (+).";
+                    carContainer.style.transform = `translateX(${shiftPos}px)`;
+                    carIcon.style.transform = "scaleX(1)";
+                    carLabel.innerText = "Balance: Positivo (+)";
+                } else {
+                    expTitle.innerText = `Signos Distintos (${sign1} ÷ ${sign2} = -)`;
+                    expDesc.innerText = "Dividir magnitudes con sentidos opuestos genera un déficit o saldo negativo.";
+                    carContainer.style.transform = `translateX(-${shiftPos}px)`;
+                    carIcon.style.transform = "scaleX(1)";
+                    carLabel.innerText = "Balance: Negativo (-)";
+                }
+
+            } else if (currentOp === '+') { // SUMA
+                opSymbol.innerText = '+';
+                opBadge.innerText = 'Modo: Suma Algebraica';
+                opTitle.innerText = 'Suma y Acumulación';
+                avatarFaIcon.className = 'fa-solid fa-person-walking';
+
+                if (sign1 === '+' && sign2 === '+') {
+                    resSignElement.innerText = '+';
+                    resSignElement.className = "text-xl sm:text-2xl font-bold font-mono text-emerald-400";
+                    expTitle.innerText = "Sumar dos Positivos (+a) + (+b)";
+                    expDesc.innerText = "Avanzas hacia la derecha y luego continúas avanzando a la derecha. Resultado positivo acumulado.";
+                    carContainer.style.transform = `translateX(${shiftFar}px)`;
+                    carIcon.style.transform = "scaleX(1)";
+                    carLabel.innerText = "Avanza + Avanza = +";
+                } else if (sign1 === '-' && sign2 === '-') {
+                    resSignElement.innerText = '-';
+                    resSignElement.className = "text-xl sm:text-2xl font-bold font-mono text-pink-400";
+                    expTitle.innerText = "Sumar dos Negativos (-a) + (-b)";
+                    expDesc.innerText = "Retrocedes a la izquierda y continúas retrocediendo. Se acumula más retroceso.";
+                    carContainer.style.transform = `translateX(-${shiftFar}px)`;
+                    carIcon.style.transform = "scaleX(-1)";
+                    carLabel.innerText = "Retrocede + Retrocede = -";
+                } else {
+                    resSignElement.innerText = '±';
+                    resSignElement.className = "text-xl sm:text-2xl font-bold font-mono text-amber-400";
+                    expTitle.innerText = "Sumar Signos Distintos";
+                    expDesc.innerText = "Hay sentidos opuestos. El signo final dependerá del número con mayor valor absoluto.";
+                    carContainer.style.transform = "translateX(0px)";
+                    carIcon.style.transform = "scaleX(1)";
+                    carLabel.innerText = "Depende de las magnitudes";
+                }
+
+            } else if (currentOp === '-') { // RESTA
+                opSymbol.innerText = '-';
+                opBadge.innerText = 'Modo: Resta Algebraica';
+                opTitle.innerText = 'Resta Algebraica';
+                avatarFaIcon.className = 'fa-solid fa-arrows-left-right';
+
+                if (sign1 === '+' && sign2 === '-') {
+                    resSignElement.innerText = '+';
+                    resSignElement.className = "text-xl sm:text-2xl font-bold font-mono text-emerald-400";
+                    expTitle.innerText = "Restar un Negativo: (+a) - (-b)";
+                    expDesc.innerText = "Restar una deuda equivale a sumar. Inviertes el signo del 2do término: (+a) + b ⟹ Resultado Positivo.";
+                    carContainer.style.transform = `translateX(${shiftPos}px)`;
+                    carIcon.style.transform = "scaleX(1)";
+                    carLabel.innerText = "Restar (-) suma (+)";
+                } else if (sign1 === '-' && sign2 === '+') {
+                    resSignElement.innerText = '-';
+                    resSignElement.className = "text-xl sm:text-2xl font-bold font-mono text-pink-400";
+                    expTitle.innerText = "Restar un Positivo: (-a) - (+b)";
+                    expDesc.innerText = "Estás en zona negativa y quitas valor positivo, lo que profundiza el retroceso: (-a) - b ⟹ Negativo.";
+                    carContainer.style.transform = `translateX(-${shiftPos}px)`;
+                    carIcon.style.transform = "scaleX(-1)";
+                    carLabel.innerText = "Quitar (+) profundiza (-)";
+                } else {
+                    resSignElement.innerText = '±';
+                    resSignElement.className = "text-xl sm:text-2xl font-bold font-mono text-amber-400";
+                    expTitle.innerText = "Resta de Signos Iguales";
+                    expDesc.innerText = "La resta invierte el signo del segundo término. El resultado final depende de la diferencia.";
+                    carContainer.style.transform = "translateX(0px)";
+                    carIcon.style.transform = "scaleX(1)";
+                    carLabel.innerText = "Depende de magnitudes";
+                }
+            }
+
+            statusIndicator.innerText = `Resultado: ${resSignElement.innerText}`;
+            statusIndicator.className = resSignElement.className;
+        }
+
+        window.addEventListener('resize', updateSimulation);
+        document.addEventListener('DOMContentLoaded', updateSimulation);
+    </script>
+</body>
+</html>

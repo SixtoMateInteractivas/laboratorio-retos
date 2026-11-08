@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Desafío de Porcentajes: Cara a Cara</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Fredoka:wght@500;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        p1: {
+                            light: '#FF6B6B',
+                            DEFAULT: '#EE5253',
+                            dark: '#C82333',
+                            accent: '#FF9F43'
+                        },
+                        p2: {
+                            light: '#48DBFB',
+                            DEFAULT: '#0ABDE3',
+                            dark: '#0086AD',
+                            accent: '#1DD1A1'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                        display: ['Fredoka', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * {
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+        .rotate-180 {
+            transform: rotate(180deg);
+        }
+        /* Custom scrollbar fallback */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans h-screen w-screen overflow-hidden flex flex-col justify-between">
+
+    <!-- OVERLAY / Pantalla de Inicio -->
+    <div id="start-screen" class="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center">
+        <div class="max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-6">
+            <div class="inline-flex p-4 bg-indigo-500/10 text-indigo-400 rounded-2xl mb-2">
+                <i class="fa-solid fa-percent text-4xl sm:text-5xl"></i>
+            </div>
+            <h1 class="font-display text-3xl sm:text-4xl font-bold bg-gradient-to-r from-red-400 via-amber-300 to-cyan-400 bg-clip-text text-transparent">
+                Desafío Porcentajes
+            </h1>
+            <p class="text-slate-400 text-sm sm:text-base">
+                Juego de competencia cara a cara en el mismo teléfono. Responde correctamente a 10 ejercicios de porcentajes antes que tu rival.
+            </p>
+
+            <div class="bg-slate-800/60 rounded-2xl p-4 text-left space-y-2 text-xs sm:text-sm text-slate-300 border border-slate-700/50">
+                <div class="flex items-center gap-2 text-amber-400 font-semibold mb-1">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Reglas de Competencia:
+                </div>
+                <p>• <strong>10 rondas</strong> seleccionadas aleatoriamente entre 20 temas de porcentajes.</p>
+                <p>• <strong>Valores dinámicos:</strong> Los datos cambian en cada intento.</p>
+                <p>• <strong>60 segundos</strong> por pregunta.</p>
+                <p>• <strong>Respuesta correcta:</strong> Quien responda bien suma un punto y ambos avanzan.</p>
+                <p>• <strong>Error o tiempo agotado:</strong> ¡Cualquier fallo reinicia el cuestionario completo!</p>
+            </div>
+
+            <button onclick="startGame()" class="w-full py-4 bg-gradient-to-r from-p1 via-amber-500 to-p2 text-white font-display font-bold text-lg rounded-2xl shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2">
+                <i class="fa-solid fa-play"></i> INICIAR DUELO
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN GAME LAYOUT (Cara a Cara Split Screen) -->
+    <main id="game-screen" class="h-full w-full flex flex-col justify-between relative bg-slate-950">
+
+        <!-- JUGADOR 1 (SUPERIOR - ROTADO 180 DEG) -->
+        <section id="p1-zone" class="rotate-180 flex-1 bg-gradient-to-b from-slate-900 via-red-950/20 to-slate-950 p-4 flex flex-col justify-between border-b-2 border-red-500/30 relative">
+            
+            <!-- Header P1 -->
+            <div class="flex items-center justify-between gap-2 bg-slate-900/80 p-2.5 rounded-2xl border border-red-500/20 shadow-md">
+                <div class="flex items-center gap-2">
+                    <span class="w-8 h-8 rounded-xl bg-p1 flex items-center justify-center font-display font-bold text-white text-sm shadow">P1</span>
+                    <span id="p1-score-label" class="font-bold text-xs sm:text-sm text-red-300">Jugador 1 (0 pts)</span>
+                </div>
+                <!-- Progreso P1 -->
+                <div class="flex items-center gap-1.5" id="p1-progress">
+                    <!-- Dynamic dots -->
+                </div>
+                <!-- Timer P1 -->
+                <div class="flex items-center gap-1 bg-red-950/60 text-red-400 px-2.5 py-1 rounded-xl font-mono text-xs font-bold border border-red-800/40">
+                    <i class="fa-regular fa-clock"></i>
+                    <span class="timer-display">60s</span>
+                </div>
+            </div>
+
+            <!-- Pregunta P1 -->
+            <div class="my-auto py-2 text-center">
+                <span id="p1-category" class="inline-block text-[10px] uppercase tracking-wider font-bold text-red-400 bg-red-950/40 px-2.5 py-0.5 rounded-full border border-red-800/30 mb-1">
+                    Tema
+                </span>
+                <div id="p1-question" class="text-sm sm:text-base font-semibold text-slate-100 max-w-xl mx-auto leading-relaxed">
+                    Cargando problema...
+                </div>
+            </div>
+
+            <!-- Opciones P1 -->
+            <div id="p1-options" class="grid grid-cols-2 gap-2 max-w-xl mx-auto w-full">
+                <!-- Dynamic Buttons P1 -->
+            </div>
+        </section>
+
+        <!-- BARRA CENTRAL DE ESTADO Y TIEMPO -->
+        <div class="h-2 bg-slate-800 relative w-full overflow-hidden flex items-center justify-center z-20">
+            <div id="timer-bar" class="h-full bg-gradient-to-r from-p1 via-amber-400 to-p2 transition-all duration-1000 ease-linear w-full"></div>
+        </div>
+
+        <!-- JUGADOR 2 (INFERIOR - ORIENTACIÓN NORMAL) -->
+        <section id="p2-zone" class="flex-1 bg-gradient-to-b from-slate-950 via-cyan-950/20 to-slate-900 p-4 flex flex-col justify-between border-t-2 border-cyan-500/30 relative">
+            
+            <!-- Header P2 -->
+            <div class="flex items-center justify-between gap-2 bg-slate-900/80 p-2.5 rounded-2xl border border-cyan-500/20 shadow-md">
+                <div class="flex items-center gap-2">
+                    <span class="w-8 h-8 rounded-xl bg-p2 flex items-center justify-center font-display font-bold text-white text-sm shadow">P2</span>
+                    <span id="p2-score-label" class="font-bold text-xs sm:text-sm text-cyan-300">Jugador 2 (0 pts)</span>
+                </div>
+                <!-- Progreso P2 -->
+                <div class="flex items-center gap-1.5" id="p2-progress">
+                    <!-- Dynamic dots -->
+                </div>
+                <!-- Timer P2 -->
+                <div class="flex items-center gap-1 bg-cyan-950/60 text-cyan-400 px-2.5 py-1 rounded-xl font-mono text-xs font-bold border border-cyan-800/40">
+                    <i class="fa-regular fa-clock"></i>
+                    <span class="timer-display">60s</span>
+                </div>
+            </div>
+
+            <!-- Pregunta P2 -->
+            <div class="my-auto py-2 text-center">
+                <span id="p2-category" class="inline-block text-[10px] uppercase tracking-wider font-bold text-cyan-400 bg-cyan-950/40 px-2.5 py-0.5 rounded-full border border-cyan-800/30 mb-1">
+                    Tema
+                </span>
+                <div id="p2-question" class="text-sm sm:text-base font-semibold text-slate-100 max-w-xl mx-auto leading-relaxed">
+                    Cargando problema...
+                </div>
+            </div>
+
+            <!-- Opciones P2 -->
+            <div id="p2-options" class="grid grid-cols-2 gap-2 max-w-xl mx-auto w-full">
+                <!-- Dynamic Buttons P2 -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- OVERLAY RESULTADO / PERDIDA / VICTORIA -->
+    <div id="modal-screen" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center">
+        <div id="modal-card" class="max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-5">
+            <div id="modal-icon" class="inline-flex p-4 rounded-2xl text-4xl">
+                <!-- Icon -->
+            </div>
+            <h2 id="modal-title" class="font-display text-2xl sm:text-3xl font-bold">
+                ¡Resultado!
+            </h2>
+            <p id="modal-desc" class="text-slate-300 text-sm sm:text-base leading-relaxed">
+                Mensaje de estado.
+            </p>
+
+            <div id="modal-stats" class="bg-slate-800/60 rounded-2xl p-4 text-xs sm:text-sm text-slate-300 border border-slate-700/50 space-y-2 hidden">
+                <div class="flex justify-between items-center">
+                    <span>Ganador del duelo:</span>
+                    <span id="winner-stat" class="font-bold text-amber-400">Jugador</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span>Tiempo total de partida:</span>
+                    <span id="total-time-stat" class="font-mono font-bold text-emerald-400">00:00</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span>Rondas completadas:</span>
+                    <span id="rounds-stat" class="font-mono font-bold text-indigo-400">10 / 10</span>
+                </div>
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="restartGame()" class="flex-1 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-display font-bold rounded-xl shadow-lg transition-all text-sm sm:text-base flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-rotate-right"></i> Reiniciar
+                </button>
+                <button onclick="exitGame()" class="px-5 py-3.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-display font-bold rounded-xl transition-all text-sm sm:text-base">
+                    Salir
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGICA JAVASCRIPT -->
+    <script>
+        // --- SINTETIZADOR DE AUDIO (Web Audio API) ---
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioCtx();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playSound(type) {
+            try {
+                initAudio();
+                if (!audioCtx) return;
+
+                const now = audioCtx.currentTime;
+
+                if (type === 'correct') {
+                    // Tono festivo de acierto
+                    const osc1 = audioCtx.createOscillator();
+                    const osc2 = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+
+                    osc1.type = 'sine';
+                    osc2.type = 'triangle';
+
+                    osc1.frequency.setValueAtTime(523.25, now); // C5
+                    osc1.frequency.exponentialRampToValueAtTime(659.25, now + 0.1); // E5
+                    osc1.frequency.exponentialRampToValueAtTime(783.99, now + 0.25); // G5
+
+                    osc2.frequency.setValueAtTime(261.63, now);
+                    osc2.frequency.exponentialRampToValueAtTime(329.63, now + 0.1);
+
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+
+                    osc1.connect(gain);
+                    osc2.connect(gain);
+                    gain.connect(audioCtx.destination);
+
+                    osc1.start(now);
+                    osc2.start(now);
+                    osc1.stop(now + 0.45);
+                    osc2.stop(now + 0.45);
+                } else if (type === 'wrong') {
+                    // Buzz de error
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(160, now);
+                    osc.frequency.linearRampToValueAtTime(90, now + 0.35);
+
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+
+                    osc.start(now);
+                    osc.stop(now + 0.4);
+                } else if (type === 'fanfare') {
+                    // Fanfarria de victoria
+                    const notes = [523.25, 659.25, 783.99, 1046.50];
+                    notes.forEach((freq, i) => {
+                        const noteOsc = audioCtx.createOscillator();
+                        const noteGain = audioCtx.createGain();
+                        noteOsc.type = 'triangle';
+                        noteOsc.frequency.setValueAtTime(freq, now + i * 0.12);
+                        noteGain.gain.setValueAtTime(0.35, now + i * 0.12);
+                        noteGain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.12 + 0.3);
+                        noteOsc.connect(noteGain);
+                        noteGain.connect(audioCtx.destination);
+                        noteOsc.start(now + i * 0.12);
+                        noteOsc.stop(now + i * 0.12 + 0.35);
+                    });
+                }
+            } catch (e) {
+                console.log("Audio no soportado o bloqueado por interacción", e);
+            }
+        }
+
+        // --- UTILIDADES ---
+        function randomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function formatCurrency(val) {
+            return `$${val.toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+        }
+
+        function formatNumber(val) {
+            return val.toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        }
+
+        // --- GENERADOR DE 20 EJERCICIOS DE PORCENTAJES CON VALORES DINÁMICOS ---
+        const problemGenerators = [
+            // --- BLOQUE 1: CÁLCULO DIRECTO (10 EJERCICIOS) ---
+
+            // 1. Porcentaje directo
+            () => {
+                const pct = randomInt(2, 9) * 5; // 10%, 15%, 20%, etc.
+                const total = randomInt(4, 20) * 50; // 200, 300, 450, etc.
+                const ans = (total * pct) / 100;
+
+                return {
+                    category: "Cálculo Directo",
+                    text: `Calcula el <b>${pct}%</b> de <b>${formatNumber(total)}</b>.`,
+                    correctVal: `${formatNumber(ans)}`,
+                    distractors: [
+                        `${formatNumber(ans + (total * 0.05))}`,
+                        `${formatNumber(Math.max(10, ans - (total * 0.05)))}`,
+                        `${formatNumber(ans * 1.2)}`
+                    ]
+                };
+            },
+
+            // 2. Obtención del total a partir de una parte
+            () => {
+                const pct = randomInt(2, 8) * 5; // 10%, 15%, 20%, 25%, etc.
+                const total = randomInt(5, 25) * 40; // 200, 400, etc.
+                const parte = (total * pct) / 100;
+
+                return {
+                    category: "Obtención del Total",
+                    text: `Si el <b>${pct}%</b> de una cantidad es <b>${formatNumber(parte)}</b>, ¿cuál es el valor de la cantidad total?`,
+                    correctVal: `${formatNumber(total)}`,
+                    distractors: [
+                        `${formatNumber(total + parte)}`,
+                        `${formatNumber(total - (parte * 2))}`,
+                        `${formatNumber(total * 1.25)}`
+                    ]
+                };
+            },
+
+            // 3. Porcentaje que representa una cifra
+            () => {
+                const total = randomInt(4, 20) * 25; // 100, 150, 200, 225...
+                const pct = randomInt(2, 9) * 5; // 10%, 15%, 20%...
+                const parte = (total * pct) / 100;
+
+                return {
+                    category: "Porcentaje de una Cifra",
+                    text: `¿Qué porcentaje representa <b>${formatNumber(parte)}</b> respecto a <b>${formatNumber(total)}</b>?`,
+                    correctVal: `${pct}%`,
+                    distractors: [
+                        `${pct + 5}%`,
+                        `${Math.max(5, pct - 5)}%`,
+                        `${pct + 10}%`
+                    ]
+                };
+            },
+
+            // 4. Porcentaje de incremento
+            () => {
+                const base = randomInt(4, 15) * 50; // 200, 300, 650...
+                const pct = randomInt(2, 6) * 4; // 8%, 12%, 16%, 20%...
+                const ans = base * (1 + pct / 100);
+
+                return {
+                    category: "Porcentaje de Incremento",
+                    text: `Incrementa <b>${formatNumber(base)}</b> en un <b>${pct}%</b>.`,
+                    correctVal: `${formatNumber(ans)}`,
+                    distractors: [
+                        `${formatNumber(base + pct)}`,
+                        `${formatNumber(ans + (base * 0.05))}`,
+                        `${formatNumber(ans - (base * 0.05))}`
+                    ]
+                };
+            },
+
+            // 5. Porcentaje de descuento / disminución
+            () => {
+                const base = randomInt(5, 20) * 100; // 500, 1200...
+                const pct = randomInt(3, 9) * 5; // 15%, 20%, 35%...
+                const ans = base * (1 - pct / 100);
+
+                return {
+                    category: "Porcentaje de Disminución",
+                    text: `Reduce <b>${formatNumber(base)}</b> en un <b>${pct}%</b>.`,
+                    correctVal: `${formatNumber(ans)}`,
+                    distractors: [
+                        `${formatNumber(base - pct)}`,
+                        `${formatNumber(ans + (base * 0.1))}`,
+                        `${formatNumber(ans - (base * 0.05))}`
+                    ]
+                };
+            },
+
+            // 6. Porcentaje con decimales
+            () => {
+                const pctDecimal = (randomInt(4, 15) * 0.5); // 2.5%, 4.5%, 8.5%...
+                const base = randomInt(10, 50) * 100; // 1000, 3400...
+                const ans = (base * pctDecimal) / 100;
+
+                return {
+                    category: "Porcentaje con Decimales",
+                    text: `Calcula el <b>${pctDecimal.toFixed(1)}%</b> de <b>${formatNumber(base)}</b>.`,
+                    correctVal: `${formatNumber(ans)}`,
+                    distractors: [
+                        `${formatNumber(ans * 10)}`,
+                        `${formatNumber(ans + 50)}`,
+                        `${formatNumber(ans * 0.5)}`
+                    ]
+                };
+            },
+
+            // 7. Sucesión de porcentajes (porcentaje de porcentaje)
+            () => {
+                const pct1 = randomInt(2, 5) * 10; // 20%, 30%, 40%...
+                const pct2 = randomInt(2, 5) * 5; // 10%, 15%, 25%...
+                const base = randomInt(5, 20) * 100; // 500, 1600...
+                const ans = base * (pct1 / 100) * (pct2 / 100);
+
+                return {
+                    category: "Porcentaje de Porcentaje",
+                    text: `Encuentra el <b>${pct2}%</b> del <b>${pct1}%</b> de <b>${formatNumber(base)}</b>.`,
+                    correctVal: `${formatNumber(ans)}`,
+                    distractors: [
+                        `${formatNumber(ans * 2)}`,
+                        `${formatNumber(ans + (base * 0.05))}`,
+                        `${formatNumber(base * ((pct1 + pct2)/100))}`
+                    ]
+                };
+            },
+
+            // 8. Diferencia porcentual
+            () => {
+                const v1 = randomInt(4, 15) * 10; // 50, 80, 100...
+                const pctInc = randomInt(2, 6) * 5; // 10%, 15%, 30%...
+                const v2 = v1 * (1 + pctInc / 100);
+
+                return {
+                    category: "Diferencia Porcentual",
+                    text: `Determina qué porcentaje aumentó una variable si pasó de <b>${formatNumber(v1)}</b> a <b>${formatNumber(v2)}</b>.`,
+                    correctVal: `${pctInc}%`,
+                    distractors: [
+                        `${pctInc + 5}%`,
+                        `${pctInc - 5}%`,
+                        `${pctInc + 10}%`
+                    ]
+                };
+            },
+
+            // 9. Porcentaje inverso
+            () => {
+                const orig = randomInt(10, 40) * 10; // 120, 200, 220...
+                const pct = randomInt(1, 4) * 5; // 5%, 10%, 15%, 20%
+                const final = orig * (1 + pct / 100);
+
+                return {
+                    category: "Porcentaje Inverso",
+                    text: `Si tras aplicar un <b>${pct}%</b> de aumento un número resulta ser <b>${formatNumber(final)}</b>, ¿cuál era el número original?`,
+                    correctVal: `${formatNumber(orig)}`,
+                    distractors: [
+                        `${formatNumber(final * (1 - pct/100))}`,
+                        `${formatNumber(orig - 20)}`,
+                        `${formatNumber(orig + 30)}`
+                    ]
+                };
+            },
+
+            // 10. Porcentaje mayor al 100%
+            () => {
+                const pct = randomInt(11, 18) * 10; // 120%, 140%, 150%...
+                const base = randomInt(4, 20) * 5; // 25, 50, 75...
+                const ans = (base * pct) / 100;
+
+                return {
+                    category: "Porcentaje Mayor al 100%",
+                    text: `Calcula el <b>${pct}%</b> de <b>${formatNumber(base)}</b>.`,
+                    correctVal: `${formatNumber(ans)}`,
+                    distractors: [
+                        `${formatNumber(ans - base)}`,
+                        `${formatNumber(ans + 25)}`,
+                        `${formatNumber(base * (pct / 10))}`
+                    ]
+                };
+            },
+
+            // --- BLOQUE 2: APLICACIONES A LA VIDA REAL (10 EJERCICIOS) ---
+
+            // 11. Rendimiento agrícola y merma
+            () => {
+                const total = randomInt(10, 40) * 25; // 500, 850, 1000 kg...
+                const pctMerma = randomInt(3, 9); // 6%, 7%...
+                const mermad = (total * pctMerma) / 100;
+                const util = total - mermad;
+
+                return {
+                    category: "Rendimiento Agrícola",
+                    text: `De una cosecha de <b>${formatNumber(total)} kg</b> de maíz, el <b>${pctMerma}%</b> sufrió daños por humedad. ¿Cuántos kg de maíz están en buen estado?`,
+                    correctVal: `${formatNumber(util)} kg`,
+                    distractors: [
+                        `${formatNumber(mermad)} kg`,
+                        `${formatNumber(util - 25)} kg`,
+                        `${formatNumber(util + 15)} kg`
+                    ]
+                };
+            },
+
+            // 12. Descuento comercial
+            () => {
+                const lista = randomInt(8, 30) * 50; // 1450, 1500...
+                const pctDesc = randomInt(3, 8) * 5; // 15%, 18%... -> usemos randomInt
+                const desc = (lista * pctDesc) / 100;
+                const final = lista - desc;
+
+                return {
+                    category: "Descuento Comercial",
+                    text: `En una tienda, un equipo de protección cuesta <b>${formatCurrency(lista)}</b>. Si tiene un <b>${pctDesc}%</b> de descuento, ¿cuál es el precio final a pagar?`,
+                    correctVal: `${formatCurrency(final)}`,
+                    distractors: [
+                        `${formatCurrency(lista - pctDesc)}`,
+                        `${formatCurrency(final + (lista * 0.05))}`,
+                        `${formatCurrency(final - (lista * 0.05))}`
+                    ]
+                };
+            },
+
+            // 13. Cálculo de IVA
+            () => {
+                const neto = randomInt(20, 100) * 100; // 5800, 6000...
+                const ivaPct = 16;
+                const total = neto * 1.16;
+
+                return {
+                    category: "Cálculo de IVA",
+                    text: `El costo neto de materiales para un aula es de <b>${formatCurrency(neto)}</b> antes de impuestos. Si se le aplica un <b>${ivaPct}%</b> de IVA, ¿cuál es el costo total?`,
+                    correctVal: `${formatCurrency(total)}`,
+                    distractors: [
+                        `${formatCurrency(neto + ivaPct)}`,
+                        `${formatCurrency(neto * 1.08)}`,
+                        `${formatCurrency(total + 320)}`
+                    ]
+                };
+            },
+
+            // 14. Interés simple en caja de ahorro
+            () => {
+                const inversion = randomInt(5, 25) * 1000; // 12000, 15000...
+                const tasa = (randomInt(5, 12) * 0.5); // 5.0%, 7.5%, 8.0%...
+                const interes = (inversion * tasa) / 100;
+
+                return {
+                    category: "Caja de Ahorro",
+                    text: `Una persona invierte <b>${formatCurrency(inversion)}</b> con una tasa de interés simple del <b>${tasa.toFixed(1)}%</b> anual. ¿Cuánto ganará en intereses al cabo de un año?`,
+                    correctVal: `${formatCurrency(interes)}`,
+                    distractors: [
+                        `${formatCurrency(inversion + interes)}`,
+                        `${formatCurrency(interes * 2)}`,
+                        `${formatCurrency(interes - 150)}`
+                    ]
+                };
+            },
+
+            // 15. Asistencia escolar
+            () => {
+                const totalAlumnos = randomInt(15, 30) * 20; // 300, 450, 500...
+                const pctAsistencia = randomInt(85, 96); // 94%...
+                const asistieron = Math.round((totalAlumnos * pctAsistencia) / 100);
+                const faltaron = totalAlumnos - asistieron;
+
+                return {
+                    category: "Asistencia Escolar",
+                    text: `En un plantel hay <b>${totalAlumnos} alumnos</b>. Si hoy asistió el <b>${pctAsistencia}%</b>, ¿cuántos estudiantes faltaron a clase?`,
+                    correctVal: `${faltaron} alumnos`,
+                    distractors: [
+                        `${asistieron} alumnos`,
+                        `${faltaron + 10} alumnos`,
+                        `${Math.max(2, faltaron - 5)} alumnos`
+                    ]
+                };
+            },
+
+            // 16. Mezclas y proporciones alimenticias
+            () => {
+                const pesoSaco = randomInt(4, 15) * 10; // 40, 50, 80 kg...
+                const pctProt = randomInt(2, 6) * 5; // 15%, 20%...
+                const protKg = (pesoSaco * pctProt) / 100;
+
+                return {
+                    category: "Proporciones y Mezclas",
+                    text: `Un saco de alimento pesa <b>${pesoSaco} kg</b> y contiene un <b>${pctProt}%</b> de proteína de soya. ¿Cuántos kg de proteína contiene el saco?`,
+                    correctVal: `${formatNumber(protKg)} kg`,
+                    distractors: [
+                        `${formatNumber(protKg + 4)} kg`,
+                        `${formatNumber(pesoSaco - protKg)} kg`,
+                        `${formatNumber(protKg * 0.5)} kg`
+                    ]
+                };
+            },
+
+            // 17. Aumento salarial
+            () => {
+                const actual = randomInt(12, 25) * 500; // 7500, 8000...
+                const pctAum = (randomInt(4, 12) * 0.7).toFixed(1); // ej 8.4%
+                const aumento = (actual * parseFloat(pctAum)) / 100;
+                const nuevoSalario = actual + aumento;
+
+                return {
+                    category: "Aumento Salarial",
+                    text: `Un trabajador ganaba <b>${formatCurrency(actual)}</b> mensuales y recibió un incremento salarial del <b>${pctAum}%</b>. ¿Cuál es su nuevo salario mensual?`,
+                    correctVal: `${formatCurrency(nuevoSalario)}`,
+                    distractors: [
+                        `${formatCurrency(actual + parseFloat(pctAum))}`,
+                        `${formatCurrency(actual + (aumento * 2))}`,
+                        `${formatCurrency(nuevoSalario - 250)}`
+                    ]
+                };
+            },
+
+            // 18. Capacidad de almacenamiento de agua
+            () => {
+                const capacidad = randomInt(15, 40) * 100; // 2500 L...
+                const pctLleno = randomInt(50, 85); // 68%...
+                const litrosLlenos = (capacidad * pctLleno) / 100;
+                const faltan = capacidad - litrosLlenos;
+
+                return {
+                    category: "Almacenamiento de Agua",
+                    text: `Un tinaco con capacidad de <b>${formatNumber(capacidad)} litros</b> está al <b>${pctLleno}%</b> de su nivel. ¿Cuántos litros le faltan para llenarse?`,
+                    correctVal: `${formatNumber(faltan)} L`,
+                    distractors: [
+                        `${formatNumber(litrosLlenos)} L`,
+                        `${formatNumber(faltan + 200)} L`,
+                        `${formatNumber(Math.max(50, faltan - 150))} L`
+                    ]
+                };
+            },
+
+            // 19. Ganancia en venta de artículos
+            () => {
+                const costo = randomInt(15, 60) * 10; // 320, 450...
+                const pctGanancia = randomInt(5, 12) * 5; // 45%, 50%...
+                const ganancia = (costo * pctGanancia) / 100;
+                const precioVenta = costo + ganancia;
+
+                return {
+                    category: "Venta de Artículos",
+                    text: `Un comerciante compra artesanías a un costo de <b>${formatCurrency(costo)}</b> y las vende con un margen de ganancia del <b>${pctGanancia}%</b>. ¿En cuánto debe vender cada una?`,
+                    correctVal: `${formatCurrency(precioVenta)}`,
+                    distractors: [
+                        `${formatCurrency(costo + pctGanancia)}`,
+                        `${formatCurrency(ganancia)}`,
+                        `${formatCurrency(precioVenta + 50)}`
+                    ]
+                };
+            },
+
+            // 20. Proporción de votación o encuestas
+            () => {
+                const total = randomInt(10, 25) * 10; // 180, 200...
+                const pctAFavor = randomInt(11, 18) * 5; // 65%, 70%...
+                const aFavor = Math.round((total * pctAFavor) / 100);
+                const pctReal = Math.round((aFavor / total) * 100);
+
+                return {
+                    category: "Votaciones y Ensayos",
+                    text: `En una asamblea comunitaria de <b>${total} integrantes</b>, <b>${aFavor}</b> votaron a favor de un proyecto. ¿Qué porcentaje de asistentes votó a favor?`,
+                    correctVal: `${pctReal}%`,
+                    distractors: [
+                        `${pctReal - 10}%`,
+                        `${pctReal + 5}%`,
+                        `${100 - pctReal}%`
+                    ]
+                };
+            }
+        ];
+
+        // --- ESTADO DEL JUEGO ---
+        const TOTAL_ROUNDS = 10;
+        const TIME_PER_QUESTION = 60;
+
+        let gameQuestions = [];
+        let currentRound = 0;
+        let p1Score = 0;
+        let p2Score = 0;
+        let timer = null;
+        let timeLeft = TIME_PER_QUESTION;
+        let startTime = null;
+        let totalElapsedSeconds = 0;
+        let isRoundActive = false;
+
+        // --- MANEJO DEL JUEGO ---
+        function startGame() {
+            initAudio();
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('modal-screen').classList.add('hidden');
+            
+            // Seleccionar 10 generadores aleatorios sin repetir de los 20
+            const indices = Array.from({length: problemGenerators.length}, (_, i) => i);
+            const shuffledIndices = shuffleArray(indices).slice(0, TOTAL_ROUNDS);
+            
+            // Generar instancias de preguntas con datos dinámicos
+            gameQuestions = shuffledIndices.map(idx => problemGenerators[idx]());
+
+            currentRound = 0;
+            p1Score = 0;
+            p2Score = 0;
+            startTime = Date.now();
+            
+            loadRound();
+        }
+
+        function loadRound() {
+            if (currentRound >= TOTAL_ROUNDS) {
+                // Determinar ganador por mayor puntaje o empate
+                let winnerText = "Empate";
+                if (p1Score > p2Score) winnerText = "Jugador 1 (Red)";
+                else if (p2Score > p1Score) winnerText = "Jugador 2 (Cyan)";
+                else winnerText = "¡Empate Técnico!";
+
+                winGame(winnerText);
+                return;
+            }
+
+            isRoundActive = true;
+            timeLeft = TIME_PER_QUESTION;
+
+            // Renderizar datos de la ronda actual
+            const qData = gameQuestions[currentRound];
+            
+            // Preparar Opciones (Mezclar respuestas)
+            let options = [
+                { text: qData.correctVal, isCorrect: true }
+            ];
+
+            qData.distractors.forEach(d => {
+                // Asegurar distractor único
+                if (!options.some(o => o.text === d)) {
+                    options.push({ text: d, isCorrect: false });
+                }
+            });
+
+            // Si por redondeo faltaran opciones, agregar un relleno de seguridad
+            while (options.length < 4) {
+                options.push({ text: `${randomInt(10, 99)}`, isCorrect: false });
+            }
+
+            // Shuffle respuestas independientemente para cada jugador
+            const optionsP1 = shuffleArray(options);
+            const optionsP2 = shuffleArray(options);
+
+            // Actualizar P1 UI
+            document.getElementById('p1-category').innerText = `Ronda ${currentRound + 1}/${TOTAL_ROUNDS} - ${qData.category}`;
+            document.getElementById('p1-question').innerHTML = qData.text;
+            renderOptions('p1-options', optionsP1, 1);
+
+            // Actualizar P2 UI
+            document.getElementById('p2-category').innerText = `Ronda ${currentRound + 1}/${TOTAL_ROUNDS} - ${qData.category}`;
+            document.getElementById('p2-question').innerHTML = qData.text;
+            renderOptions('p2-options', optionsP2, 2);
+
+            // Actualizar Progreso (Puntos de avance)
+            renderProgress();
+
+            // Iniciar Temporizador
+            startTimer();
+        }
+
+        function renderOptions(containerId, options, playerNum) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            
+            options.forEach((opt) => {
+                const btn = document.createElement('button');
+                btn.className = `w-full py-3 px-2 rounded-2xl font-bold text-xs sm:text-sm border shadow-md transition-all active:scale-95 flex items-center justify-center ${
+                    playerNum === 1 
+                        ? 'bg-slate-800/90 border-red-500/30 text-red-100 hover:bg-red-900/40 active:bg-p1' 
+                        : 'bg-slate-800/90 border-cyan-500/30 text-cyan-100 hover:bg-cyan-900/40 active:bg-p2'
+                }`;
+                btn.innerHTML = opt.text;
+                btn.onclick = () => handleAnswer(playerNum, opt.isCorrect, btn);
+                container.appendChild(btn);
+            });
+        }
+
+        function renderProgress() {
+            const p1Container = document.getElementById('p1-progress');
+            const p2Container = document.getElementById('p2-progress');
+
+            document.getElementById('p1-score-label').innerText = `Jugador 1 (${p1Score} pts)`;
+            document.getElementById('p2-score-label').innerText = `Jugador 2 (${p2Score} pts)`;
+
+            let htmlP1 = '';
+            let htmlP2 = '';
+
+            for (let i = 0; i < TOTAL_ROUNDS; i++) {
+                if (i < currentRound) {
+                    htmlP1 += `<span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm"></span>`;
+                    htmlP2 += `<span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm"></span>`;
+                } else if (i === currentRound) {
+                    htmlP1 += `<span class="w-3 h-3 rounded-full bg-p1 animate-pulse"></span>`;
+                    htmlP2 += `<span class="w-3 h-3 rounded-full bg-p2 animate-pulse"></span>`;
+                } else {
+                    htmlP1 += `<span class="w-2 h-2 rounded-full bg-slate-700"></span>`;
+                    htmlP2 += `<span class="w-2 h-2 rounded-full bg-slate-700"></span>`;
+                }
+            }
+
+            p1Container.innerHTML = htmlP1;
+            p2Container.innerHTML = htmlP2;
+        }
+
+        function startTimer() {
+            clearInterval(timer);
+            updateTimerDisplay();
+
+            timer = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    isRoundActive = false;
+                    playSound('wrong');
+                    showFailModal("¡Tiempo Agotado!", "Ningún jugador respondió antes de los 60 segundos. El juego se reiniciará por completo.");
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const displays = document.querySelectorAll('.timer-display');
+            displays.forEach(d => d.innerText = `${timeLeft}s`);
+
+            const bar = document.getElementById('timer-bar');
+            const percentage = (timeLeft / TIME_PER_QUESTION) * 100;
+            bar.style.width = `${percentage}%`;
+
+            if (timeLeft <= 10) {
+                bar.className = "h-full bg-red-500 transition-all duration-1000 ease-linear w-full";
+            } else {
+                bar.className = "h-full bg-gradient-to-r from-p1 via-amber-400 to-p2 transition-all duration-1000 ease-linear w-full";
+            }
+        }
+
+        function handleAnswer(playerNum, isCorrect, btnElement) {
+            if (!isRoundActive) return;
+
+            if (isCorrect) {
+                // Acierto: suma punto al jugador que respondió primero y ambos avanzan
+                isRoundActive = false;
+                clearInterval(timer);
+                playSound('correct');
+
+                if (playerNum === 1) p1Score++;
+                else p2Score++;
+
+                // Visual Feedback
+                btnElement.classList.remove('bg-slate-800/90');
+                btnElement.classList.add('bg-emerald-600', 'text-white', 'border-emerald-400');
+
+                setTimeout(() => {
+                    currentRound++;
+                    loadRound();
+                }, 400);
+
+            } else {
+                // Error: Sonido error y reinicio del cuestionario
+                isRoundActive = false;
+                clearInterval(timer);
+                playSound('wrong');
+
+                btnElement.classList.remove('bg-slate-800/90');
+                btnElement.classList.add('bg-red-600', 'text-white', 'border-red-400');
+
+                const pName = playerNum === 1 ? "Jugador 1" : "Jugador 2";
+                showFailModal(`¡Error de ${pName}!`, "Respuesta incorrecta. La regla del juego exige reiniciar la competencia con un nuevo conjunto de 10 preguntas.");
+            }
+        }
+
+        function showFailModal(title, message) {
+            const modal = document.getElementById('modal-screen');
+            const icon = document.getElementById('modal-icon');
+            const titleEl = document.getElementById('modal-title');
+            const desc = document.getElementById('modal-desc');
+            const stats = document.getElementById('modal-stats');
+
+            icon.className = "inline-flex p-4 rounded-2xl text-4xl bg-red-500/10 text-red-400";
+            icon.innerHTML = `<i class="fa-solid fa-xmark"></i>`;
+            
+            titleEl.className = "font-display text-2xl sm:text-3xl font-bold text-red-400";
+            titleEl.innerText = title;
+            desc.innerText = message;
+
+            stats.classList.add('hidden');
+            modal.classList.remove('hidden');
+        }
+
+        function winGame(winnerName) {
+            clearInterval(timer);
+            playSound('fanfare');
+
+            const totalTimeMs = Date.now() - startTime;
+            totalElapsedSeconds = Math.floor(totalTimeMs / 1000);
+            const mins = Math.floor(totalElapsedSeconds / 60);
+            const secs = totalElapsedSeconds % 60;
+            const formattedTime = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+            const modal = document.getElementById('modal-screen');
+            const icon = document.getElementById('modal-icon');
+            const titleEl = document.getElementById('modal-title');
+            const desc = document.getElementById('modal-desc');
+            const stats = document.getElementById('modal-stats');
+            const winnerStat = document.getElementById('winner-stat');
+            const totalTimeStat = document.getElementById('total-time-stat');
+
+            icon.className = "inline-flex p-4 rounded-2xl text-4xl bg-amber-500/10 text-amber-400 animate-bounce";
+            icon.innerHTML = `<i class="fa-solid fa-trophy"></i>`;
+            
+            titleEl.className = "font-display text-2xl sm:text-3xl font-bold bg-gradient-to-r from-amber-300 via-amber-400 to-yellow-500 bg-clip-text text-transparent";
+            titleEl.innerText = "¡DUELO FINALIZADO!";
+            desc.innerText = " Han completado con éxito las 10 rondas del cuestionario de porcentajes.";
+
+            winnerStat.innerText = winnerName;
+            totalTimeStat.innerText = `${formattedTime} min`;
+            stats.classList.remove('hidden');
+
+            modal.classList.remove('hidden');
+        }
+
+        function restartGame() {
+            startGame();
+        }
+
+        function exitGame() {
+            clearInterval(timer);
+            document.getElementById('modal-screen').classList.add('hidden');
+            document.getElementById('start-screen').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>

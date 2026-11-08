@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500 selection:text-white">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Portal Digital de Matemáticas Interactivas | MCCEMS</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js para simulaciones -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fredoka:wght@400;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        },
+                        p1: { DEFAULT: '#EE5253', dark: '#C82333' },
+                        p2: { DEFAULT: '#0ABDE3', dark: '#0086AD' }
+                    },
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                        display: ['Fredoka', 'sans-serif'],
+                        mono: ['Space Grotesk', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #090d16;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+        .gradient-title {
+            background: linear-gradient(135deg, #818cf8 0%, #c084fc 50%, #f472b6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .glass-card {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glass-card:hover {
+            border-color: rgba(99, 102, 241, 0.4);
+            box-shadow: 0 10px 30px -10px rgba(99, 102, 241, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 min-h-screen flex flex-col justify-between overflow-x-hidden antialiased">
+
+    <!-- HEADER PRINCIPAL -->
+    <header class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col lg:flex-row items-center justify-between gap-4">
+            
+            <!-- Logo & Titulo -->
+            <div class="flex items-center justify-between w-full lg:w-auto">
+                <div class="flex items-center gap-3 cursor-pointer" onclick="switchSubject('pm1')">
+                    <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-indigo-500/20">
+                        <i class="fa-solid fa-shapes"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-display text-lg sm:text-xl font-bold gradient-title leading-none">Matemáticas Interactivas</h1>
+                        <span class="text-[11px] text-slate-400 font-medium">Marco Curricular Común de Educación Media Superior (MCCEMS)</span>
+                    </div>
+                </div>
+
+                <!-- Botón móvil de menú gamificación -->
+                <button onclick="toggleGamificationBar()" class="lg:hidden p-2 rounded-xl bg-slate-800 text-indigo-400 border border-slate-700">
+                    <i class="fa-solid fa-trophy"></i>
+                </button>
+            </div>
+
+            <!-- Navegación por Asignaturas -->
+            <nav class="flex items-center gap-1.5 overflow-x-auto w-full lg:w-auto pb-2 lg:pb-0 scrollbar-none text-xs sm:text-sm font-semibold">
+                <button id="nav-pm1" onclick="switchSubject('pm1')" class="px-3.5 py-2 rounded-xl bg-indigo-600 text-white shadow-md shadow-indigo-600/30 whitespace-nowrap transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-brain"></i> Pensamiento Matemático I
+                </button>
+                <button id="nav-pm3" onclick="switchSubject('pm3')" class="px-3.5 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 whitespace-nowrap transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-chart-area"></i> Pensamiento Mat. III
+                </button>
+                <button id="nav-tpv" onclick="switchSubject('tpv')" class="px-3.5 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 whitespace-nowrap transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-wave-square"></i> TPV I (Variacional)
+                </button>
+                <button id="nav-tpye" onclick="switchSubject('tpye')" class="px-3.5 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 whitespace-nowrap transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-chart-pie"></i> TPyE I (Estadística)
+                </button>
+                <button id="nav-otras" onclick="switchSubject('otras')" class="px-3.5 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 whitespace-nowrap transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-cubes"></i> Otras Áreas
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- BARRA DE GAMIFICACIÓN & RACHA DE AULA -->
+    <div id="gamification-bar" class="bg-slate-900 border-b border-slate-800/80 px-4 py-2 text-xs">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 px-3 py-1 rounded-full text-amber-400 font-bold">
+                    <i class="fa-solid fa-fire text-amber-500 animate-pulse"></i>
+                    <span>Racha de Aula: <span id="user-streak">5</span> Días</span>
+                </div>
+                <div class="flex items-center gap-1.5 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-full text-indigo-300 font-bold">
+                    <i class="fa-solid fa-star text-indigo-400"></i>
+                    <span>XP Acumulado: <span id="user-xp">1,240</span> pts</span>
+                </div>
+                <div class="hidden md:flex items-center gap-1.5 text-slate-400">
+                    <i class="fa-solid fa-award text-emerald-400"></i>
+                    <span>Insignia Actual: <strong class="text-emerald-300 font-mono">Dominio de Razonamiento</strong></span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <button onclick="openQuickTrainerModal()" class="px-3 py-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:brightness-110 text-white font-bold rounded-lg shadow transition-all flex items-center gap-1.5">
+                    <i class="fa-solid fa-bolt"></i> Entrenamiento Exprés (Mental)
+                </button>
+                <button onclick="openPaecModal()" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-lg border border-slate-700 transition-all flex items-center gap-1.5">
+                    <i class="fa-solid fa-seedling text-emerald-400"></i> Proyectos PAEC
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTENIDO DINÁMICO POR ASIGNATURAS -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full space-y-8">
+
+        <!-- ========================================================= -->
+        <!-- SECCIÓN 1: PENSAMIENTO MATEMÁTICO I -->
+        <!-- ========================================================= -->
+        <section id="sec-pm1" class="space-y-8">
+            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-950 via-slate-900 to-slate-950 border border-indigo-500/30 p-6 sm:p-8 shadow-2xl">
+                <div class="relative z-10 max-w-3xl space-y-3">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-400/30 text-indigo-300 text-xs font-semibold">
+                        <i class="fa-solid fa-graduation-cap"></i> Semestre I • Primer Año EMS
+                    </div>
+                    <h2 class="font-display text-2xl sm:text-4xl font-bold text-white leading-tight">
+                        Pensamiento Matemático I: Operaciones, Fracciones y Proporciones
+                    </h2>
+                    <p class="text-slate-300 text-xs sm:text-sm leading-relaxed">
+                        Explora la colección interactiva de simuladores didácticos y minijuegos para fortalecer la fluidez numérica y el razonamiento.
+                    </p>
+                </div>
+            </div>
+
+            <!-- GRID DE RECURSOS INTERACTIVOS -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                
+                <!-- Recurso 1: Porcentajes -->
+                <div class="glass-card rounded-3xl p-6 flex flex-col justify-between transition-all group">
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400 text-2xl group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-percent"></i>
+                            </span>
+                            <span class="px-2.5 py-1 rounded-full bg-red-950/60 border border-red-800/40 text-red-300 text-[10px] font-bold uppercase tracking-wider">
+                                Duelo 1v1 Split-Screen
+                            </span>
+                        </div>
+                        <div>
+                            <h3 class="font-display text-lg font-bold text-slate-100 group-hover:text-red-400 transition-colors">
+                                Desafío Porcentajes (Cara a Cara)
+                            </h3>
+                            <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+                                Competencia frente a frente en pantalla dividida. Cálculo directo, IVA, ganancias y mermas.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="pt-6 mt-6 border-t border-slate-800/80 flex items-center justify-between">
+                        <span class="text-[11px] text-slate-500 font-mono">10 Rondas</span>
+                        <button onclick="launchApp('app-porcentajes-1v1')" class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs shadow-lg transition-all flex items-center gap-2">
+                            <i class="fa-solid fa-play"></i> Ejecutar Juego
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recurso 2: Fracciones -->
+                <div class="glass-card rounded-3xl p-6 flex flex-col justify-between transition-all group">
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 text-2xl group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-users-slash"></i>
+                            </span>
+                            <span class="px-2.5 py-1 rounded-full bg-cyan-950/60 border border-cyan-800/40 text-cyan-300 text-[10px] font-bold uppercase tracking-wider">
+                                Duelo 1v1 Split-Screen
+                            </span>
+                        </div>
+                        <div>
+                            <h3 class="font-display text-lg font-bold text-slate-100 group-hover:text-cyan-400 transition-colors">
+                                Desafío Fracciones (Cara a Cara)
+                            </h3>
+                            <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+                                Reparto de terrenos, recetas, cosechas y envasado.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="pt-6 mt-6 border-t border-slate-800/80 flex items-center justify-between">
+                        <span class="text-[11px] text-slate-500 font-mono">Simplificación • MCD</span>
+                        <button onclick="launchApp('app-fracciones-1v1')" class="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-lg transition-all flex items-center gap-2">
+                            <i class="fa-solid fa-play"></i> Ejecutar Juego
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recurso 3: Proporcionalidad -->
+                <div class="glass-card rounded-3xl p-6 flex flex-col justify-between transition-all group">
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 text-2xl group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-chart-line"></i>
+                            </span>
+                            <span class="px-2.5 py-1 rounded-full bg-indigo-950/60 border border-indigo-800/40 text-indigo-300 text-[10px] font-bold uppercase tracking-wider">
+                                Simulador & Chart.js
+                            </span>
+                        </div>
+                        <div>
+                            <h3 class="font-display text-lg font-bold text-slate-100 group-hover:text-indigo-400 transition-colors">
+                                Proporcionalidad Directa vs Inversa
+                            </h3>
+                            <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+                                Exploración gráfica interactiva de curvas y tablas de datos.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="pt-6 mt-6 border-t border-slate-800/80 flex items-center justify-between">
+                        <span class="text-[11px] text-slate-500 font-mono">Constante k • Gráficas</span>
+                        <button onclick="launchApp('app-proporcionalidad-lab')" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg transition-all flex items-center gap-2">
+                            <i class="fa-solid fa-flask"></i> Abrir Lab
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recurso 4: Laberinto Signos -->
+                <div class="glass-card rounded-3xl p-6 flex flex-col justify-between transition-all group">
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="w-12 h-12 rounded-2xl bg-pink-500/10 border border-pink-500/30 flex items-center justify-center text-pink-400 text-2xl group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-dungeon"></i>
+                            </span>
+                            <span class="px-2.5 py-1 rounded-full bg-pink-950/60 border border-pink-800/40 text-pink-300 text-[10px] font-bold uppercase tracking-wider">
+                                Desafío 20 Pasos
+                            </span>
+                        </div>
+                        <div>
+                            <h3 class="font-display text-lg font-bold text-slate-100 group-hover:text-pink-400 transition-colors">
+                                Laberinto Matemático: Leyes de Signos
+                            </h3>
+                            <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+                                Aventura acumulativa con operaciones combinadas (+, -, *, /).
+                            </p>
+                        </div>
+                    </div>
+                    <div class="pt-6 mt-6 border-t border-slate-800/80 flex items-center justify-between">
+                        <span class="text-[11px] text-slate-500 font-mono">Ruta Acumulativa</span>
+                        <button onclick="launchApp('app-laberinto-signos')" class="px-4 py-2 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs shadow-lg transition-all flex items-center gap-2">
+                            <i class="fa-solid fa-gamepad"></i> Jugar Laberinto
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recurso 5: Laboratorio Ley de Signos -->
+                <div class="glass-card rounded-3xl p-6 flex flex-col justify-between transition-all group">
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-2xl group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-calculator"></i>
+                            </span>
+                            <span class="px-2.5 py-1 rounded-full bg-emerald-950/60 border border-emerald-800/40 text-emerald-300 text-[10px] font-bold uppercase tracking-wider">
+                                Modelo Visual
+                            </span>
+                        </div>
+                        <div>
+                            <h3 class="font-display text-lg font-bold text-slate-100 group-hover:text-emerald-400 transition-colors">
+                                Laboratorio Visual: Ley de los Signos
+                            </h3>
+                            <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+                                Simulación gráfica sobre la recta numérica para comprender operaciones numéricas.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="pt-6 mt-6 border-t border-slate-800/80 flex items-center justify-between">
+                        <span class="text-[11px] text-slate-500 font-mono">Recta Numérica</span>
+                        <button onclick="launchApp('app-ley-signos-lab')" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg transition-all flex items-center gap-2">
+                            <i class="fa-solid fa-sliders"></i> Explorar Modelo
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recurso 6: Simulador Visual Fracciones -->
+                <div class="glass-card rounded-3xl p-6 flex flex-col justify-between transition-all group">
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 text-2xl group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-border-all"></i>
+                            </span>
+                            <span class="px-2.5 py-1 rounded-full bg-amber-950/60 border border-amber-800/40 text-amber-300 text-[10px] font-bold uppercase tracking-wider">
+                                Grillas Interactivas
+                            </span>
+                        </div>
+                        <div>
+                            <h3 class="font-display text-lg font-bold text-slate-100 group-hover:text-amber-400 transition-colors">
+                                Simulador Visual de Fracciones
+                            </h3>
+                            <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+                                Visualización mediante mallas superpuestas (Nivel 1 y Nivel 2).
+                            </p>
+                        </div>
+                    </div>
+                    <div class="pt-6 mt-6 border-t border-slate-800/80 flex items-center justify-between">
+                        <span class="text-[11px] text-slate-500 font-mono">Niveles 1 y 2</span>
+                        <button onclick="launchApp('app-simulador-fracciones')" class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs shadow-lg transition-all flex items-center gap-2">
+                            <i class="fa-solid fa-cubes"></i> Abrir Simulador
+                        </button>
+                    </div>
+                </div>
+                <!-- Recurso Nuevo: Duelo Algebraico 1v1 -->
+<div class="glass-card rounded-3xl p-6 flex flex-col justify-between transition-all group">
+    <div class="space-y-4">
+        <div class="flex items-center justify-between">
+            <span class="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 text-2xl group-hover:scale-110 transition-transform">
+                <i class="fa-solid fa-gamepad"></i>
+            </span>
+            <span class="px-2.5 py-1 rounded-full bg-amber-950/60 border border-amber-800/40 text-amber-300 text-[10px] font-bold uppercase tracking-wider">
+                Duelo 1v1 Split-Screen
+            </span>
+        </div>
+        <div>
+            <h3 class="font-display text-lg font-bold text-slate-100 group-hover:text-amber-400 transition-colors">
+                Duelo Algebraico 1v1 (Signos y Operaciones)
+            </h3>
+            <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+                Competencia cara a cara en pantalla dividida (180°). 20 aciertos requeridos con sumas, restas, multiplicaciones y divisiones de enteros. ¡Un error reinicia tu cuenta!
+            </p>
+        </div>
+    </div>
+    <div class="pt-6 mt-6 border-t border-slate-800/80 flex items-center justify-between">
+        <span class="text-[11px] text-slate-500 font-mono">20 Aciertos • 3 Operandos</span>
+        <button onclick="launchApp('app-duelo-algebraico')" class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs shadow-lg transition-all flex items-center gap-2">
+            <i class="fa-solid fa-play"></i> Ejecutar Duelo
+        </button>
+    </div>
+</div>
+            </div>
+        </section>
+
+        <!-- SECCIONES SECUNDARIAS (PM3, TPV, TPYE, OTRAS) -->
+        <section id="sec-pm3" class="hidden space-y-8">
+            <div class="bg-gradient-to-r from-purple-950 via-slate-900 to-slate-950 border border-purple-500/30 rounded-3xl p-6 sm:p-8">
+                <h2 class="font-display text-2xl sm:text-3xl font-bold text-white">Pensamiento Matemático III</h2>
+            </div>
+        </section>
+        <section id="sec-tpv" class="hidden space-y-8">
+            <div class="bg-gradient-to-r from-cyan-950 via-slate-900 to-slate-950 border border-cyan-500/30 rounded-3xl p-6 sm:p-8">
+                <h2 class="font-display text-2xl sm:text-3xl font-bold text-white">Taller de Pensamiento Variacional I</h2>
+            </div>
+        </section>
+        <section id="sec-tpye" class="hidden space-y-8">
+            <div class="bg-gradient-to-r from-emerald-950 via-slate-900 to-slate-950 border border-emerald-500/30 rounded-3xl p-6 sm:p-8">
+                <h2 class="font-display text-2xl sm:text-3xl font-bold text-white">Taller de Probabilidad y Estadística I</h2>
+            </div>
+        </section>
+        <section id="sec-otras" class="hidden space-y-8">
+            <div class="bg-gradient-to-r from-amber-950 via-slate-900 to-slate-950 border border-amber-500/30 rounded-3xl p-6 sm:p-8">
+                <h2 class="font-display text-2xl sm:text-3xl font-bold text-white">Otras Áreas</h2>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL / EJECUTOR EN PANTALLA COMPLETA DE SIMULADORES -->
+    <div id="app-modal" class="hidden fixed inset-0 z-50 bg-slate-950 flex flex-col">
+        <!-- Barra de Control del Modal -->
+        <div class="bg-slate-900 px-4 py-2.5 border-b border-slate-800 flex items-center justify-between text-xs">
+            <div class="flex items-center gap-3">
+                <span id="modal-app-title" class="font-display font-bold text-sm text-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-gamepad text-indigo-400"></i> Ejecutando Simulador
+                </span>
+            </div>
+            <button onclick="closeAppModal()" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl transition-all flex items-center gap-1.5">
+                <i class="fa-solid fa-xmark"></i> Cerrar Aplicación
+            </button>
+        </div>
+
+        <!-- IFrame ejecutor directo por archivo local -->
+        <div class="flex-1 w-full h-full bg-black relative">
+            <iframe id="app-iframe" class="w-full h-full border-0"></iframe>
+        </div>
+    </div>
+
+    <!-- SCRIPT CORREGIDO DE NAVEGACIÓN Y EJECUCIÓN DIRECTA -->
+    <script>
+        // --- ASIGNACIÓN DIRECTA DE ARCHIVOS HTML ---
+        const APPS_SOURCE = {
+            'app-porcentajes-1v1': 'desaf_porcentajes_cara_a_cara.html',
+    'app-fracciones-1v1': 'desafio_fracciones_cara_a_cara.html',
+    'app-proporcionalidad-lab': 'lab_clasificador_desafio_Proporcion_inv_direc.html',
+    'app-laberinto-signos': 'laberinto_signos_desaf_20_pasos.html',
+    'app-ley-signos-lab': 'Laboratorio_Ley_Signos.html',
+    'app-simulador-fracciones': 'simulador_visual_fracciones.html',
+    'app-duelo-algebraico': 'desaf_operacion_signo.html' // <-- Agregada esta línea
+        };
+
+        function switchSubject(subId) {
+            const sections = ['sec-pm1', 'sec-pm3', 'sec-tpv', 'sec-tpye', 'sec-otras'];
+            const navs = ['nav-pm1', 'nav-pm3', 'nav-tpv', 'nav-tpye', 'nav-otras'];
+
+            sections.forEach(id => document.getElementById(id).classList.add('hidden'));
+            navs.forEach(id => {
+                const btn = document.getElementById(id);
+                btn.className = "px-3.5 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 whitespace-nowrap transition-all flex items-center gap-2";
+            });
+
+            document.getElementById(`sec-${subId}`).classList.remove('hidden');
+            document.getElementById(`nav-${subId}`).className = "px-3.5 py-2 rounded-xl bg-indigo-600 text-white shadow-md shadow-indigo-600/30 whitespace-nowrap transition-all flex items-center gap-2";
+        }
+
+        // --- FUNCIÓN LAUNCHAPP CORREGIDA ---
+        function launchApp(appId) {
+            const modal = document.getElementById('app-modal');
+            const iframe = document.getElementById('app-iframe');
+            const titleEl = document.getElementById('modal-app-title');
+
+            const appTitles = {
+                'app-porcentajes-1v1': 'Desafío Porcentajes: Cara a Cara (1v1)',
+    'app-fracciones-1v1': 'Desafío Fracciones: Cara a Cara (1v1)',
+    'app-proporcionalidad-lab': 'Laboratorio Gráfico de Proporcionalidad',
+    'app-laberinto-signos': 'Laberinto Matemático: Leyes de los Signos',
+    'app-ley-signos-lab': 'Laboratorio Visual: Ley de los Signos',
+    'app-simulador-fracciones': 'Simulador Visual de Fracciones',
+    'app-duelo-algebraico': 'Duelo Algebraico 1v1 (Enteros y Signos)' // <-- Agregada esta línea
+
+            };
+
+            titleEl.innerHTML = `<i class="fa-solid fa-gamepad text-indigo-400"></i> ${appTitles[appId] || 'Simulador Interactivo'}`;
+            
+            // Asignación directa a .src en lugar de usar .srcdoc o getElementsByName
+            iframe.src = APPS_SOURCE[appId];
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeAppModal() {
+            const modal = document.getElementById('app-modal');
+            const iframe = document.getElementById('app-iframe');
+            iframe.src = '';
+            modal.classList.add('hidden');
+        }
+
+        function toggleGamificationBar() {
+            const bar = document.getElementById('gamification-bar');
+            bar.classList.toggle('hidden');
+        }
+    </script>
+</body>
+</html>

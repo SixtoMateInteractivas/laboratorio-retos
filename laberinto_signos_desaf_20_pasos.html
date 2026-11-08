@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Laberinto Matemático: Leyes de los Signos</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Space+Grotesk:wght@500;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif']
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            500: '#06b6d4',
+                            600: '#0891b2',
+                            900: '#164e63',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        button {
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 6px;
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 15px rgba(6, 182, 212, 0.4); }
+            50% { box-shadow: 0 0 25px rgba(236, 72, 153, 0.6); }
+        }
+        .active-node {
+            animation: pulse-glow 2s infinite;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col justify-between selection:bg-cyan-500 selection:text-slate-950 antialiased">
+
+    <!-- HEADER DE LA APLICACIÓN -->
+    <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur-md sticky top-0 z-40 px-3 py-2.5 sm:px-4 sm:py-3">
+        <div class="max-w-5xl mx-auto flex items-center justify-between gap-2">
+            
+            <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-pink-500 flex items-center justify-center font-bold text-white shadow-lg shrink-0">
+                    <i class="fa-solid fa-dungeon text-base sm:text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-display font-bold text-base sm:text-xl text-cyan-400 leading-none">Laberinto de Signos</h1>
+                    <span class="text-[10px] sm:text-xs text-slate-400">Desafío Secuencial de 20 Operaciones</span>
+                </div>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="flex items-center gap-2">
+                <button onclick="toggleAudio()" id="btn-audio" class="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 font-semibold transition-all border border-slate-700 flex items-center gap-1.5">
+                    <i id="audio-icon" class="fa-solid fa-volume-high text-cyan-400"></i>
+                    <span class="hidden sm:inline">Sonido</span>
+                </button>
+                <button onclick="openHelpModal()" class="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-indigo-900/60 hover:bg-indigo-800/80 text-xs text-indigo-200 font-semibold transition-all border border-indigo-700 flex items-center gap-1.5">
+                    <i class="fa-solid fa-book-open text-indigo-400"></i>
+                    <span class="hidden sm:inline">Guía de Reglas</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="max-w-5xl mx-auto px-3 py-4 sm:px-4 sm:py-6 flex-1 w-full space-y-4 sm:space-y-6">
+
+        <!-- MAPA VISUAL DEL LABERINTO (PROGRESO EN 20 PASOS) -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 shadow-xl space-y-3">
+            <div class="flex justify-between items-center text-xs text-slate-400 font-bold uppercase tracking-wider">
+                <span class="flex items-center gap-1.5 text-cyan-400">
+                    <i class="fa-solid fa-route"></i> Mapa del Laberinto
+                </span>
+                <span id="progress-text" class="font-mono text-cyan-300">Paso 1 / 20</span>
+            </div>
+
+            <!-- Contenedor con Scroll Horizontal del Camino -->
+            <div class="overflow-x-auto custom-scrollbar pb-2 pt-1">
+                <div id="labyrinth-path" class="flex items-center min-w-max px-2 gap-2">
+                    <!-- Generado dinámicamente con JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- PANEL CENTRAL DE JUEGO / DESAFÍO -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-stretch">
+            
+            <!-- TARJETA DE ESTADO ACTUAL -->
+            <div class="md:col-span-5 bg-slate-900/60 border border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl flex flex-col justify-between space-y-4">
+                
+                <div class="space-y-1">
+                    <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400 bg-slate-950 px-2.5 py-1 rounded-full border border-slate-800">
+                        Estado del Explorador
+                    </span>
+                    <h2 class="font-display text-lg sm:text-xl font-bold text-slate-200 mt-2">
+                        Paso Actual: <span id="current-step-display" class="text-cyan-400 font-mono">1</span>
+                    </h2>
+                </div>
+
+                <!-- Número Acumulado Principal -->
+                <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 text-center space-y-1 my-auto">
+                    <span class="text-xs text-slate-400 font-medium">Valor Acumulado Actual</span>
+                    <div id="current-value-display" class="font-display font-extrabold text-4xl sm:text-5xl text-amber-400 font-mono tracking-tight">
+                        +0
+                    </div>
+                </div>
+
+                <!-- Info de racha y mejor avance -->
+                <div class="grid grid-cols-2 gap-2 text-center text-xs">
+                    <div class="bg-slate-950/60 border border-slate-800 p-2.5 rounded-xl">
+                        <span class="text-[10px] text-slate-500 block uppercase font-bold">Racha Actual</span>
+                        <span id="streak-display" class="font-mono font-bold text-emerald-400 text-sm">0 aciertos</span>
+                    </div>
+                    <div class="bg-slate-950/60 border border-slate-800 p-2.5 rounded-xl">
+                        <span class="text-[10px] text-slate-500 block uppercase font-bold">Récord Máximo</span>
+                        <span id="max-record-display" class="font-mono font-bold text-cyan-400 text-sm">Paso 1</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- TARJETA DEL PROBLEMA Y OPCIONES -->
+            <div class="md:col-span-7 bg-slate-900/60 border border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl space-y-4 sm:space-y-6 flex flex-col justify-between">
+                
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <span id="operation-type-badge" class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-pink-400 bg-pink-950/60 px-2.5 py-1 rounded-full border border-pink-800/40">
+                            Operación: Multiplicación
+                        </span>
+                        <span id="step-tag" class="text-xs font-mono text-slate-400">Desafío #1</span>
+                    </div>
+
+                    <p class="text-xs sm:text-sm text-slate-300">
+                        Aplica la operación propuesta al número acumulado actual calculando los signos correctamente:
+                    </p>
+                </div>
+
+                <!-- Expresión Matemática Prominente -->
+                <div class="bg-slate-950 border border-cyan-500/30 rounded-2xl p-4 text-center">
+                    <span class="text-xs text-slate-400 block mb-1">Ecuación de la Casilla</span>
+                    <div id="equation-display" class="font-mono text-2xl sm:text-3xl font-extrabold text-cyan-300 tracking-wide">
+                        (-5) × (-3) = ?
+                    </div>
+                </div>
+
+                <!-- Cuadrícula de Opciones Múltiples (4 Alternativas) -->
+                <div id="options-container" class="grid grid-cols-2 gap-2.5 sm:gap-3">
+                    <!-- Generadas por JavaScript -->
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="border-t border-slate-800 bg-slate-900/50 py-3 text-center text-[10px] sm:text-xs text-slate-500">
+        Laberinto Digital de Operaciones con Signos • Matemática Interactiva
+    </footer>
+
+    <!-- MODAL DE EXPLICACIÓN AL FALLAR (REINICIO) -->
+    <div id="fail-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-rose-500/50 rounded-3xl p-5 sm:p-7 max-w-md w-full space-y-4 text-center shadow-2xl transform transition-all">
+            <div class="w-14 h-14 rounded-2xl bg-rose-950 border border-rose-500/40 text-rose-400 flex items-center justify-center text-2xl mx-auto shadow-lg">
+                <i class="fa-solid fa-skull-crossbones"></i>
+            </div>
+            
+            <div class="space-y-1">
+                <h3 class="font-display text-xl sm:text-2xl font-bold text-slate-100">¡Te has perdido en el laberinto!</h3>
+                <p class="text-xs text-rose-300 font-medium">Respuesta incorrecta. Debes volver al Inicio (Paso 0).</p>
+            </div>
+
+            <!-- Resumen de la equivocación -->
+            <div class="bg-slate-950 border border-slate-800 rounded-2xl p-3.5 text-left text-xs space-y-2">
+                <div class="flex justify-between border-b border-slate-800 pb-1.5 font-mono">
+                    <span class="text-slate-400">Operación:</span>
+                    <span id="fail-op-text" class="text-slate-200 font-bold"></span>
+                </div>
+                <div class="flex justify-between border-b border-slate-800 pb-1.5 font-mono">
+                    <span class="text-slate-400">Tu respuesta:</span>
+                    <span id="fail-user-ans" class="text-rose-400 font-bold"></span>
+                </div>
+                <div class="flex justify-between border-b border-slate-800 pb-1.5 font-mono">
+                    <span class="text-slate-400">Respuesta correcta:</span>
+                    <span id="fail-correct-ans" class="text-emerald-400 font-bold"></span>
+                </div>
+                
+                <div class="pt-1">
+                    <span class="text-amber-400 font-bold block mb-1">💡 Explicación del signo:</span>
+                    <p id="fail-explanation" class="text-slate-300 leading-relaxed text-[11px]"></p>
+                </div>
+            </div>
+
+            <button onclick="restartGame()" class="w-full py-3 bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-bold rounded-xl text-sm transition-all shadow-lg flex items-center justify-center gap-2">
+                <i class="fa-solid fa-rotate-right"></i> Reiniciar Laberinto (Nuevo Camino)
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL DE VICTORIA (COMPLETAR 20 PASOS) -->
+    <div id="win-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-emerald-500/50 rounded-3xl p-5 sm:p-7 max-w-md w-full space-y-4 text-center shadow-2xl">
+            <div class="w-16 h-16 rounded-2xl bg-emerald-950 border border-emerald-500/40 text-emerald-400 flex items-center justify-center text-3xl mx-auto shadow-lg">
+                <i class="fa-solid fa-trophy"></i>
+            </div>
+            
+            <div class="space-y-1">
+                <h3 class="font-display text-2xl font-bold text-slate-100">¡Has completado el Laberinto!</h3>
+                <p class="text-xs text-emerald-400 font-medium">Dominio total de las 20 operaciones con signos.</p>
+            </div>
+
+            <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 text-center space-y-1 font-mono">
+                <span class="text-xs text-slate-400">Valor Final Alcanzado</span>
+                <div id="win-final-val" class="text-3xl font-bold text-amber-400">0</div>
+            </div>
+
+            <button onclick="restartGame()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-sm transition-all shadow-lg flex items-center justify-center gap-2">
+                <i class="fa-solid fa-play"></i> Jugar Otro Laberinto
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL DE GUÍA / AYUDA DE REGLAS -->
+    <div id="help-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 max-w-lg w-full space-y-4 text-left shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
+            
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="font-display text-lg font-bold text-cyan-400 flex items-center gap-2">
+                    <i class="fa-solid fa-book-open"></i> Leyes de los Signos
+                </h3>
+                <button onclick="closeHelpModal()" class="text-slate-400 hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3 text-xs sm:text-sm">
+                
+                <!-- Multiplicación y División -->
+                <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 space-y-1.5">
+                    <h4 class="font-bold text-indigo-300 uppercase tracking-wider text-[11px]">Multiplicación y División</h4>
+                    <p class="text-slate-300 text-[11px]">Signos iguales dan resultado <strong>positivo (+)</strong>. Signos diferentes dan resultado <strong>negativo (-)</strong>.</p>
+                    <div class="grid grid-cols-2 gap-1.5 font-mono text-[11px] text-slate-300 pt-1">
+                        <div class="bg-slate-900 p-1.5 rounded text-center">(+) × (+) = <strong class="text-emerald-400">+</strong></div>
+                        <div class="bg-slate-900 p-1.5 rounded text-center">(-) × (-) = <strong class="text-emerald-400">+</strong></div>
+                        <div class="bg-slate-900 p-1.5 rounded text-center">(+) × (-) = <strong class="text-rose-400">-</strong></div>
+                        <div class="bg-slate-900 p-1.5 rounded text-center">(-) × (+) = <strong class="text-rose-400">-</strong></div>
+                    </div>
+                </div>
+
+                <!-- Suma -->
+                <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 space-y-1.5">
+                    <h4 class="font-bold text-indigo-300 uppercase tracking-wider text-[11px]">Suma Algebraica</h4>
+                    <ul class="list-disc list-inside text-slate-300 text-[11px] space-y-1">
+                        <li><strong>Mismo signo:</strong> Se suman los valores absolutos y se conserva el signo. Ej: <code class="text-cyan-300">(-3) + (-5) = -8</code>.</li>
+                        <li><strong>Distinto signo:</strong> Se restan los valores absolutos y se mantiene el signo del número con <em>mayor valor absoluto</em>. Ej: <code class="text-cyan-300">(-8) + (+3) = -5</code>.</li>
+                    </ul>
+                </div>
+
+                <!-- Resta -->
+                <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 space-y-1.5">
+                    <h4 class="font-bold text-indigo-300 uppercase tracking-wider text-[11px]">Resta Algebraica</h4>
+                    <p class="text-slate-300 text-[11px]">Restar equivale a sumar el opuesto del segundo número (se le cambia el signo al número que resta). Ej: <code class="text-cyan-300 font-mono">(-4) - (-7) ⟹ (-4) + 7 = +3</code>.</p>
+                </div>
+
+            </div>
+
+            <button onclick="closeHelpModal()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-xl text-xs transition-all">
+                Entendido, volver al juego
+            </button>
+        </div>
+    </div>
+
+    <!-- LÓGICA JAVASCRIPT DEL LABERINTO -->
+    <script>
+        // --- AUDIO SINTETIZADO (Web Audio API) ---
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+        let soundEnabled = true;
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new AudioContext();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function toggleAudio() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('audio-icon');
+            icon.className = soundEnabled ? "fa-solid fa-volume-high text-cyan-400" : "fa-solid fa-volume-xmark text-slate-500";
+        }
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                initAudio();
+                if (!audioCtx) return;
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                if (type === 'correct') {
+                    // Tono alegre ascendente
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.1); // E5
+                    osc.frequency.exponentialRampToValueAtTime(783.99, now + 0.2); // G5
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'fail') {
+                    // Tono grave descendente de error
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.linearRampToValueAtTime(110, now + 0.3);
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                } else if (type === 'win') {
+                    // Arpegio de victoria
+                    [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+                        const o = audioCtx.createOscillator();
+                        const g = audioCtx.createGain();
+                        o.type = 'triangle';
+                        o.frequency.value = freq;
+                        g.gain.setValueAtTime(0.15, now + (idx * 0.1));
+                        g.gain.exponentialRampToValueAtTime(0.01, now + (idx * 0.1) + 0.3);
+                        o.connect(g);
+                        g.connect(audioCtx.destination);
+                        o.start(now + (idx * 0.1));
+                        o.stop(now + (idx * 0.1) + 0.3);
+                    });
+                }
+            } catch(e){}
+        }
+
+        // --- ESTADO DEL JUEGO ---
+        const TOTAL_STEPS = 20;
+        let currentStep = 1; // 1 a 20
+        let currentValue = 0;
+        let streak = 0;
+        let maxRecord = 1;
+        let currentProblem = null;
+
+        // --- GENERADOR DE OPERACIONES ---
+        function getRandomInt(min, max, excludeZero = true) {
+            let num = 0;
+            while (num === 0 && excludeZero) {
+                num = Math.floor(Math.random() * (max - min + 1)) + min;
+            }
+            return num;
+        }
+
+        function generateProblem(currentVal, step) {
+            // Seleccionar tipo de operación distribuido entre +, -, *, /
+            const opTypes = ['+', '-', '*', '/'];
+            const op = opTypes[Math.floor(Math.random() * opTypes.length)];
+
+            let operand = 0;
+            let targetResult = 0;
+            let explanation = "";
+
+            if (op === '+') {
+                operand = getRandomInt(-12, 12);
+                targetResult = currentVal + operand;
+                if (currentVal >= 0 && operand >= 0) {
+                    explanation = `Al sumar dos números positivos (${currentVal}) + (${operand}), sus magnitudes se suman manteniendo el signo positivo.`;
+                } else if (currentVal < 0 && operand < 0) {
+                    explanation = `Al sumar dos números negativos (${currentVal}) + (${operand}), se suman sus valores absolutos y el resultado mantiene el signo negativo.`;
+                } else {
+                    explanation = `Al sumar números con distinto signo (${currentVal}) + (${operand}), se restan sus valores absolutos y se conserva el signo del número de mayor valor.`;
+                }
+            } else if (op === '-') {
+                operand = getRandomInt(-12, 12);
+                targetResult = currentVal - operand;
+                explanation = `Restar (${operand}) equivale a sumar su opuesto (${-operand}). La ecuación se transforma en: ${currentVal} + (${-operand}) = ${targetResult}.`;
+            } else if (op === '*') {
+                operand = getRandomInt(-9, 9);
+                targetResult = currentVal * operand;
+                const sameSign = (currentVal > 0 && operand > 0) || (currentVal < 0 && operand < 0);
+                explanation = sameSign ?
+                    `Al multiplicar dos signos iguales (${currentVal > 0 ? '+' : '-'}) × (${operand > 0 ? '+' : '-'}), el resultado siempre es POSITIVO (+).` :
+                    `Al multiplicar dos signos diferentes (${currentVal > 0 ? '+' : '-'}) × (${operand > 0 ? '+' : '-'}), el resultado siempre es NEGATIVO (-).`;
+            } else if (op === '/') {
+                // Para garantizar divisiones exactas
+                const divisors = [];
+                for (let d = -10; d <= 10; d++) {
+                    if (d !== 0 && currentVal % d === 0) divisors.push(d);
+                }
+                
+                if (divisors.length > 0) {
+                    operand = divisors[Math.floor(Math.random() * divisors.length)];
+                } else {
+                    // Si el valor actual es primo o difícil, ajustar operand
+                    operand = currentVal !== 0 ? (Math.random() > 0.5 ? 1 : -1) : getRandomInt(-5, 5);
+                }
+
+                targetResult = Math.round(currentVal / operand);
+                const sameSign = (currentVal > 0 && operand > 0) || (currentVal < 0 && operand < 0);
+                explanation = sameSign ?
+                    `Al dividir dos signos iguales (${currentVal > 0 ? '+' : '-'}) ÷ (${operand > 0 ? '+' : '-'}), el resultado es POSITIVO (+).` :
+                    `Al dividir dos signos diferentes (${currentVal > 0 ? '+' : '-'}) ÷ (${operand > 0 ? '+' : '-'}), el resultado es NEGATIVO (-).`;
+            }
+
+            // Generar 3 opciones incorrectas convincentes
+            const optionsSet = new Set();
+            optionsSet.add(targetResult);
+
+            while (optionsSet.size < 4) {
+                let fake = targetResult + getRandomInt(-6, 6, true);
+                // Errores comunes de signo: invertir signo del resultado correcto
+                if (Math.random() > 0.5) fake = -targetResult;
+                optionsSet.add(fake);
+            }
+
+            const options = Array.from(optionsSet).sort(() => Math.random() - 0.5);
+
+            return {
+                currentVal: currentVal,
+                op: op,
+                operand: operand,
+                targetResult: targetResult,
+                options: options,
+                explanation: explanation
+            };
+        }
+
+        // --- RENDERIZADO DEL LABERINTO Y PANTALLA ---
+        function renderLabyrinthPath() {
+            const pathContainer = document.getElementById('labyrinth-path');
+            pathContainer.innerHTML = '';
+
+            for (let i = 1; i <= TOTAL_STEPS; i++) {
+                const isCurrent = (i === currentStep);
+                const isPassed = (i < currentStep);
+
+                const node = document.createElement('div');
+                node.className = `flex items-center gap-2`;
+
+                let nodeStyle = "bg-slate-950 border-slate-800 text-slate-500";
+                if (isCurrent) {
+                    nodeStyle = "bg-cyan-950 border-cyan-400 text-cyan-300 active-node font-extrabold scale-105";
+                } else if (isPassed) {
+                    nodeStyle = "bg-emerald-950/60 border-emerald-500/50 text-emerald-400 font-bold";
+                }
+
+                node.innerHTML = `
+                    <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex flex-col items-center justify-center text-xs font-mono transition-all ${nodeStyle}">
+                        <span class="text-[9px] opacity-70">#${i}</span>
+                        <span>${isPassed ? '<i class="fa-solid fa-check text-xs"></i>' : i}</span>
+                    </div>
+                `;
+
+                pathContainer.appendChild(node);
+
+                // Agregar conector entre casillas
+                if (i < TOTAL_STEPS) {
+                    const line = document.createElement('div');
+                    line.className = `w-4 sm:w-6 h-0.5 ${isPassed ? 'bg-emerald-500/60' : 'bg-slate-800'}`;
+                    pathContainer.appendChild(line);
+                }
+            }
+
+            // Hacer auto-scroll a la casilla actual
+            const activeElem = pathContainer.children[(currentStep - 1) * 2];
+            if (activeElem) {
+                activeElem.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            }
+        }
+
+        function loadStep() {
+            currentProblem = generateProblem(currentValue, currentStep);
+
+            // Actualizar interfaz
+            document.getElementById('current-step-display').innerText = currentStep;
+            document.getElementById('progress-text').innerText = `Paso ${currentStep} / ${TOTAL_STEPS}`;
+            document.getElementById('current-value-display').innerText = currentValue >= 0 ? `+${currentValue}` : currentValue;
+            document.getElementById('streak-display').innerText = `${streak} aciertos`;
+            document.getElementById('max-record-display').innerText = `Paso ${maxRecord}`;
+
+            // Badge de operación
+            const opNames = { '+': 'Suma', '-': 'Resta', '*': 'Multiplicación', '/': 'División' };
+            document.getElementById('operation-type-badge').innerText = `Operación: ${opNames[currentProblem.op]}`;
+            document.getElementById('step-tag').innerText = `Desafío #${currentStep}`;
+
+            // Formatear Ecuación
+            const opSymbol = currentProblem.op === '*' ? '×' : (currentProblem.op === '/' ? '÷' : currentProblem.op);
+            const valStr = currentProblem.currentVal >= 0 ? `+${currentProblem.currentVal}` : `(${currentProblem.currentVal})`;
+            const operandStr = currentProblem.operand >= 0 ? `+${currentProblem.operand}` : `(${currentProblem.operand})`;
+            
+            document.getElementById('equation-display').innerText = `${valStr} ${opSymbol} ${operandStr} = ?`;
+
+            // Cargar botones de opciones
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+
+            currentProblem.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "p-3.5 sm:p-4 bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-cyan-500/50 rounded-2xl text-base sm:text-lg font-mono font-bold text-slate-100 transition-all text-center shadow-md hover:scale-[1.02] active:scale-95";
+                btn.innerText = opt >= 0 ? `+${opt}` : opt;
+                btn.onclick = () => handleAnswer(opt);
+                optionsContainer.appendChild(btn);
+            });
+
+            renderLabyrinthPath();
+        }
+
+        function handleAnswer(selectedOpt) {
+            if (selectedOpt === currentProblem.targetResult) {
+                // --- RESPUESTA CORRECTA ---
+                playSound('correct');
+                streak++;
+                currentValue = currentProblem.targetResult;
+
+                if (currentStep > maxRecord) maxRecord = currentStep;
+
+                if (currentStep >= TOTAL_STEPS) {
+                    // ¡VICTORIA TOTAL!
+                    playSound('win');
+                    document.getElementById('win-final-val').innerText = currentValue >= 0 ? `+${currentValue}` : currentValue;
+                    document.getElementById('win-modal').classList.remove('hidden');
+                } else {
+                    currentStep++;
+                    loadStep();
+                }
+            } else {
+                // --- RESPUESTA INCORRECTA (REINICIO AL PASO 0) ---
+                playSound('fail');
+                
+                // Formatear texto del error
+                const opSymbol = currentProblem.op === '*' ? '×' : (currentProblem.op === '/' ? '÷' : currentProblem.op);
+                const valStr = currentProblem.currentVal >= 0 ? `+${currentProblem.currentVal}` : `(${currentProblem.currentVal})`;
+                const operandStr = currentProblem.operand >= 0 ? `+${currentProblem.operand}` : `(${currentProblem.operand})`;
+
+                document.getElementById('fail-op-text').innerText = `${valStr} ${opSymbol} ${operandStr}`;
+                document.getElementById('fail-user-ans').innerText = selectedOpt >= 0 ? `+${selectedOpt}` : selectedOpt;
+                document.getElementById('fail-correct-ans').innerText = currentProblem.targetResult >= 0 ? `+${currentProblem.targetResult}` : currentProblem.targetResult;
+                document.getElementById('fail-explanation').innerText = currentProblem.explanation;
+
+                document.getElementById('fail-modal').classList.remove('hidden');
+            }
+        }
+
+        function restartGame() {
+            document.getElementById('fail-modal').classList.add('hidden');
+            document.getElementById('win-modal').classList.add('hidden');
+            
+            currentStep = 1;
+            streak = 0;
+            // Número inicial aleatorio entre -10 y 10 (evitando 0)
+            currentValue = getRandomInt(-10, 10);
+            loadStep();
+        }
+
+        function openHelpModal() {
+            document.getElementById('help-modal').classList.remove('hidden');
+        }
+
+        function closeHelpModal() {
+            document.getElementById('help-modal').classList.add('hidden');
+        }
+
+        // --- INICIALIZACIÓN AL CARGAR ---
+        document.addEventListener('DOMContentLoaded', () => {
+            restartGame();
+        });
+    </script>
+</body>
+</html>

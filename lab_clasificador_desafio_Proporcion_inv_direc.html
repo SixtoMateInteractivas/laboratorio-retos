@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio Gráfico de Proporcionalidad</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js para visualización de curvas de proporcionalidad -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif']
+                    },
+                    colors: {
+                        directa: { DEFAULT: '#3B82F6', light: '#93C5FD', dark: '#1D4ED8' },
+                        inversa: { DEFAULT: '#EC4899', light: '#F472B6', dark: '#BE185D' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .gradient-text {
+            background: linear-gradient(135deg, #60A5FA 0%, #F472B6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        canvas {
+            touch-action: none;
+        }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.92);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
+
+    <!-- HEADER / NAVEGACIÓN -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-500 to-pink-500 flex items-center justify-center font-bold text-white shadow-lg">
+                    <i class="fa-solid fa-chart-line text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-display font-bold text-lg sm:text-xl gradient-text leading-none">Proporcionalidad Lab</h1>
+                    <span class="text-xs text-slate-400">Directa vs Inversa • Experiencia Gráfica Interactiva</span>
+                </div>
+            </div>
+
+            <!-- Controles de Navegación y Botón Instructivo -->
+            <div class="flex items-center gap-2 flex-wrap">
+                <!-- Tabs de modo -->
+                <nav class="flex bg-slate-950 p-1 rounded-2xl border border-slate-800 text-xs sm:text-sm font-semibold">
+                    <button id="tab-lab" onclick="switchTab('lab')" class="px-4 py-2 rounded-xl transition-all bg-indigo-600 text-white shadow">
+                        <i class="fa-solid fa-flask mr-1.5"></i> <span class="hidden sm:inline">1. </span>Laboratorio
+                    </button>
+                    <button id="tab-clasificador" onclick="switchTab('clasificador')" class="px-4 py-2 rounded-xl transition-all text-slate-400 hover:text-slate-200">
+                        <i class="fa-solid fa-shapes mr-1.5"></i> <span class="hidden sm:inline">2. </span>Clasificador
+                    </button>
+                    <button id="tab-quiz" onclick="switchTab('quiz')" class="px-4 py-2 rounded-xl transition-all text-slate-400 hover:text-slate-200">
+                        <i class="fa-solid fa-gamepad mr-1.5"></i> <span class="hidden sm:inline">3. </span>Desafío
+                    </button>
+                </nav>
+
+                <!-- Botón de Instructivo -->
+                <button onclick="toggleHowToPlay()" class="px-3.5 py-2 bg-indigo-900/50 hover:bg-indigo-800 text-indigo-200 rounded-xl border border-indigo-700/50 text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all">
+                    <i class="fa-solid fa-circle-question text-indigo-400 text-base"></i> Instructivo
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="max-w-7xl mx-auto px-4 py-6 flex-1 w-full">
+
+        <!-- SECCIÓN 1: LABORATORIO GRÁFICO INTERACTIVO -->
+        <section id="sec-lab" class="space-y-6">
+            <div class="bg-slate-900/60 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl">
+                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
+                    <div>
+                        <h2 class="font-display text-xl sm:text-2xl font-bold text-slate-100 flex items-center gap-2">
+                            <i class="fa-solid fa-sliders text-indigo-400"></i> Explorador de Curvas de Proporcionalidad
+                        </h2>
+                        <p class="text-xs sm:text-sm text-slate-400 mt-1">
+                            Modifica la constante (k) y observa el comportamiento gráfico comparativo en tiempo real.
+                        </p>
+                    </div>
+
+                    <!-- Selector de vista de gráfico -->
+                    <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+                        <button onclick="setLabMode('both')" id="btn-mode-both" class="px-3 py-1.5 rounded-lg bg-slate-800 text-white font-bold">Ambas</button>
+                        <button onclick="setLabMode('directa')" id="btn-mode-directa" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">Solo Directa</button>
+                        <button onclick="setLabMode('inversa')" id="btn-mode-inversa" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">Solo Inversa</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                    <!-- Controles e Información -->
+                    <div class="lg:col-span-5 space-y-5">
+                        
+                        <!-- Control Slider K -->
+                        <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-3">
+                            <div class="flex justify-between items-center text-xs font-bold">
+                                <span class="text-slate-300">Constante de Proporción (k)</span>
+                                <span id="k-val-display" class="font-mono text-base text-amber-400 bg-amber-950/40 px-2 py-0.5 rounded-lg border border-amber-800/40">k = 24</span>
+                            </div>
+                            <input type="range" id="k-slider" min="6" max="120" step="2" value="24" oninput="updateLabGraph()" class="w-full accent-indigo-500 cursor-pointer h-2 bg-slate-800 rounded-lg">
+                            <div class="flex justify-between text-[10px] text-slate-500 font-mono">
+                                <span>6</span>
+                                <span>60</span>
+                                <span>120</span>
+                            </div>
+                        </div>
+
+                        <!-- Tarjetas de fórmulas y propiedades -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="bg-blue-950/30 border border-blue-500/30 rounded-2xl p-4 space-y-2">
+                                <div class="flex items-center gap-2 text-blue-400 font-display font-bold text-sm">
+                                    <span class="w-3 h-3 rounded-full bg-blue-500"></span> Directa
+                                </div>
+                                <div class="font-mono text-xs text-blue-200"><strong>y = k • x</strong></div>
+                                <p class="text-[11px] text-slate-400 leading-relaxed">
+                                    Si x aumenta, y aumenta proporcionalmente. Recta que pasa por el origen.
+                                </p>
+                                <div class="bg-slate-950/60 rounded-xl p-2 font-mono text-[11px] text-slate-300 border border-blue-900/50" id="directa-calc-box">
+                                    Si x = 4 ⟹ y = 96
+                                </div>
+                            </div>
+
+                            <div class="bg-pink-950/30 border border-pink-500/30 rounded-2xl p-4 space-y-2">
+                                <div class="flex items-center gap-2 text-pink-400 font-display font-bold text-sm">
+                                    <span class="w-3 h-3 rounded-full bg-pink-500"></span> Inversa
+                                </div>
+                                <div class="font-mono text-xs text-pink-200"><strong>y = k / x</strong></div>
+                                <p class="text-[11px] text-slate-400 leading-relaxed">
+                                    Si x aumenta, y disminuye. Hipérbola decreciente.
+                                </p>
+                                <div class="bg-slate-950/60 rounded-xl p-2 font-mono text-[11px] text-slate-300 border border-pink-900/50" id="inversa-calc-box">
+                                    Si x = 4 ⟹ y = 6
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Simulación Interactiva Visual -->
+                        <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-3">
+                            <span class="text-xs font-bold text-slate-300 flex items-center gap-2">
+                                <i class="fa-solid fa-eye text-emerald-400"></i> Ejemplo Físico (Velocidad vs Tiempo)
+                            </span>
+                            <div class="flex items-center gap-4">
+                                <div class="flex-1 space-y-1">
+                                    <label class="text-[11px] text-slate-400 flex justify-between">
+                                        <span>Velocidad (v):</span>
+                                        <b id="sim-v-val" class="text-cyan-400 font-mono">60 km/h</b>
+                                    </label>
+                                    <input type="range" id="sim-v-slider" min="10" max="120" step="5" value="60" oninput="updateSimVisual()" class="w-full accent-cyan-400 h-1.5 bg-slate-800 rounded-lg">
+                                </div>
+                                <div class="text-center bg-slate-900 px-3 py-2 rounded-xl border border-slate-800">
+                                    <span class="text-[10px] text-slate-400 block uppercase font-bold">Tiempo</span>
+                                    <span id="sim-t-val" class="font-display font-bold text-lg text-pink-400 font-mono">2.0 h</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Canvas Chart.js con Altura Fija Garantizada -->
+                    <div class="lg:col-span-7 bg-slate-950 border border-slate-800 rounded-2xl p-4 relative" style="height: 380px;">
+                        <canvas id="labChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 2: CLASIFICADOR DE TABLAS DE DATOS -->
+        <section id="sec-clasificador" class="hidden space-y-6">
+            <div class="bg-slate-900/60 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl max-w-3xl mx-auto text-center space-y-6">
+                <div>
+                    <span class="text-xs uppercase tracking-wider font-bold text-indigo-400 bg-indigo-950/60 px-3 py-1 rounded-full border border-indigo-800/40">
+                        Desafío de Reconocimiento de Patrón
+                    </span>
+                    <h2 class="font-display text-2xl sm:text-3xl font-bold text-slate-100 mt-2">
+                        ¿Qué tipo de proporcionalidad observas?
+                    </h2>
+                    <p class="text-xs sm:text-sm text-slate-400 mt-1">
+                        Analiza los 4 pares ordenados (x, y) en la siguiente tabla de datos.
+                    </p>
+                </div>
+
+                <!-- Tabla de datos con 4 pares ordenados (X, Y) -->
+                <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 overflow-x-auto">
+                    <table class="w-full text-center border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-800 text-xs font-mono text-slate-400">
+                                <th class="py-2 px-3 bg-slate-900/50 rounded-tl-xl border-r border-slate-800">Variable</th>
+                                <th class="py-2 px-3 font-bold text-amber-400">Par 1</th>
+                                <th class="py-2 px-3 font-bold text-amber-400">Par 2</th>
+                                <th class="py-2 px-3 font-bold text-amber-400">Par 3</th>
+                                <th class="py-2 px-3 font-bold text-amber-400">Par 4</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b border-slate-800/60 text-xs sm:text-sm font-mono text-slate-200">
+                                <td class="py-2.5 px-3 bg-slate-900/50 font-bold text-amber-400 border-r border-slate-800">Magnitud X</td>
+                                <td id="x-val-0" class="py-2.5 px-3">--</td>
+                                <td id="x-val-1" class="py-2.5 px-3">--</td>
+                                <td id="x-val-2" class="py-2.5 px-3">--</td>
+                                <td id="x-val-3" class="py-2.5 px-3">--</td>
+                            </tr>
+                            <tr class="text-xs sm:text-sm font-mono text-slate-200">
+                                <td class="py-2.5 px-3 bg-slate-900/50 font-bold text-indigo-300 border-r border-slate-800">Magnitud Y</td>
+                                <td id="y-val-0" class="py-2.5 px-3 text-indigo-300 font-bold">--</td>
+                                <td id="y-val-1" class="py-2.5 px-3 text-indigo-300 font-bold">--</td>
+                                <td id="y-val-2" class="py-2.5 px-3 text-indigo-300 font-bold">--</td>
+                                <td id="y-val-3" class="py-2.5 px-3 text-indigo-300 font-bold">--</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Botones de Selección -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <button onclick="checkClassification('DIRECTA')" class="p-4 bg-blue-950/40 hover:bg-blue-900/60 border border-blue-500/40 rounded-2xl transition-all group text-left">
+                        <div class="flex items-center justify-between font-display font-bold text-blue-400 text-base mb-1">
+                            <span>Directa (y/x = k)</span>
+                            <i class="fa-solid fa-arrow-trend-up group-hover:scale-110 transition-transform"></i>
+                        </div>
+                        <p class="text-[11px] text-slate-400">Si X aumenta, Y aumenta con cociente constante.</p>
+                    </button>
+
+                    <button onclick="checkClassification('INVERSA')" class="p-4 bg-pink-950/40 hover:bg-pink-900/60 border border-pink-500/40 rounded-2xl transition-all group text-left">
+                        <div class="flex items-center justify-between font-display font-bold text-pink-400 text-base mb-1">
+                            <span>Inversa (xy = k)</span>
+                            <i class="fa-solid fa-arrow-trend-down group-hover:scale-110 transition-transform"></i>
+                        </div>
+                        <p class="text-[11px] text-slate-400">Si X aumenta, Y disminuye con producto constante[cite: 3].</p>
+                    </button>
+                </div>
+
+                <!-- Feedback -->
+                <div id="classifier-feedback" class="hidden p-4 rounded-2xl text-xs sm:text-sm font-semibold border"></div>
+
+                <button onclick="nextClassifierQuestion()" class="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-xl text-xs transition-all">
+                    <i class="fa-solid fa-rotate-right mr-1.5"></i> Probar con otra Tabla
+                </button>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 3: DESAFÍO / QUIZ -->
+        <section id="sec-quiz" class="hidden space-y-6">
+            <div class="bg-slate-900/60 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl max-w-3xl mx-auto text-center space-y-6">
+                <div>
+                    <span class="text-xs uppercase tracking-wider font-bold text-pink-400 bg-pink-950/60 px-3 py-1 rounded-full border border-pink-800/40">
+                        Práctica de Cálculo Aplicado
+                    </span>
+                    <h2 id="quiz-question-title" class="font-display text-xl sm:text-2xl font-bold text-slate-100 mt-2">
+                        Problema de aplicación
+                    </h2>
+                    <p id="quiz-question-text" class="text-xs sm:text-sm text-slate-300 mt-3 leading-relaxed">
+                        Cargando problema...
+                    </p>
+                </div>
+
+                <div id="quiz-options" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <!-- Opciones dinámicas -->
+                </div>
+
+                <div id="quiz-feedback" class="hidden p-4 rounded-2xl text-xs sm:text-sm font-semibold border"></div>
+
+                <button onclick="nextQuizQuestion()" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs transition-all shadow">
+                    Siguiente Problema <i class="fa-solid fa-arrow-right ml-1"></i>
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL DE INSTRUCTIVO / CÓMO USAR -->
+    <div id="howto-modal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass-panel rounded-3xl p-5 sm:p-6 max-w-lg w-full space-y-4 border border-indigo-500/40 max-h-[90vh] overflow-y-auto text-left shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="font-display text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-book-open text-indigo-400"></i> Instructivo del Laboratorio
+                </h3>
+                <button onclick="toggleHowToPlay()" class="text-slate-400 hover:text-white text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3.5 text-xs text-slate-300 leading-relaxed">
+                <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                    <p class="font-bold text-cyan-400 mb-1"><i class="fa-solid fa-bullseye"></i> ¿De qué trata esta herramienta?</p>
+                    <p>Este laboratorio interactivo permite comprender y diferenciar de forma gráfica y analítica los conceptos de <strong>Proporcionalidad Directa</strong> e <strong>Inversa</strong>[cite: 3].</p>
+                </div>
+
+                <div class="space-y-2">
+                    <p class="font-bold text-indigo-300"><i class="fa-solid fa-list-check"></i> Guía por Secciones:</p>
+                    <ul class="list-disc pl-4 space-y-1.5 text-slate-400">
+                        <li><strong>1. Laboratorio Gráfico:</strong> Mueve el control deslizante de la constante (k) para modificar las curvas en tiempo real. Puedes alternar la vista entre ambas funciones, solo directa o solo inversa, y probar el ejemplo físico de velocidad y tiempo.</li>
+                        <li><strong>2. Clasificador de Tablas:</strong> Analiza los 4 pares ordenados (x, y) de la tabla. Determina si el comportamiento corresponde a una proporción directa (y/x = k) o inversa (xy = k).</li>
+                        <li><strong>3. Desafío de Aplicación:</strong> Resuelve problemas prácticos de razonamiento matemático seleccionando la opción correcta entre cuatro alternativas[cite: 3].</li>
+                    </ul>
+                </div>
+
+                <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 space-y-1">
+                    <p class="font-bold text-emerald-400"><i class="fa-solid fa-lightbulb"></i> Tips clave:</p>
+                    <p class="text-[11px] text-slate-400"><strong>Directa:</strong> Si una magnitud crece, la otra también en la misma proporción (ej. precio y cantidad).</p>
+                    <p class="text-[11px] text-slate-400"><strong>Inversa:</strong> Si una magnitud crece, la otra disminuye (ej. velocidad y tiempo de viaje).</p>
+                </div>
+            </div>
+
+            <button onclick="toggleHowToPlay()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs transition-all shadow-lg">
+                ¡Entendido, Explorar Laboratorio!
+            </button>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="border-t border-slate-800 bg-slate-900/50 py-4 text-center text-xs text-slate-500">
+        Laboratorio Digital de Matemáticas • Proporcionalidad Directa e Inversa
+    </footer>
+
+    <!-- LÓGICA JAVASCRIPT -->
+    <script>
+        // --- AUDIO SINTETIZADO ---
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new AudioCtx();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playBeep(type) {
+            try {
+                initAudio();
+                if (!audioCtx) return;
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                if (type === 'ok') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now);
+                    osc.frequency.exponentialRampToValueAtTime(783.99, now + 0.15);
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                } else {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(180, now);
+                    osc.frequency.linearRampToValueAtTime(100, now + 0.2);
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                }
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            } catch(e){}
+        }
+
+        // --- CONTROL DE INSTRUCTIVO MODAL ---
+        function toggleHowToPlay() {
+            const modal = document.getElementById('howto-modal');
+            modal.classList.toggle('hidden');
+        }
+
+        // --- NAVEGACIÓN ENTRE TABS ---
+        function switchTab(tabName) {
+            initAudio();
+            ['sec-lab', 'sec-clasificador', 'sec-quiz'].forEach(id => document.getElementById(id).classList.add('hidden'));
+            ['tab-lab', 'tab-clasificador', 'tab-quiz'].forEach(id => {
+                const btn = document.getElementById(id);
+                btn.className = "px-4 py-2 rounded-xl transition-all text-slate-400 hover:text-slate-200";
+            });
+
+            if (tabName === 'lab') {
+                document.getElementById('sec-lab').classList.remove('hidden');
+                document.getElementById('tab-lab').className = "px-4 py-2 rounded-xl transition-all bg-indigo-600 text-white shadow";
+                if (labChart) {
+                    labChart.resize();
+                    labChart.update();
+                }
+            } else if (tabName === 'clasificador') {
+                document.getElementById('sec-clasificador').classList.remove('hidden');
+                document.getElementById('tab-clasificador').className = "px-4 py-2 rounded-xl transition-all bg-indigo-600 text-white shadow";
+                nextClassifierQuestion();
+            } else if (tabName === 'quiz') {
+                document.getElementById('sec-quiz').classList.remove('hidden');
+                document.getElementById('tab-quiz').className = "px-4 py-2 rounded-xl transition-all bg-indigo-600 text-white shadow";
+                nextQuizQuestion();
+            }
+        }
+
+        // --- SECCIÓN 1: LABORATORIO CHART.JS ---
+        let labChart = null;
+        let currentLabMode = 'both';
+
+        function initLabChart() {
+            const canvasEl = document.getElementById('labChart');
+            if (!canvasEl) return;
+            const ctx = canvasEl.getContext('2d');
+            
+            labChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Proporción Directa (y = k · x)',
+                            borderColor: '#3B82F6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderWidth: 3,
+                            pointRadius: 3,
+                            data: [],
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Proporción Inversa (y = k / x)',
+                            borderColor: '#EC4899',
+                            backgroundColor: 'rgba(236, 72, 153, 0.1)',
+                            borderWidth: 3,
+                            pointRadius: 3,
+                            data: [],
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Variable X', color: '#94A3B8' },
+                            grid: { color: 'rgba(51, 65, 85, 0.4)' },
+                            ticks: { color: '#94A3B8' }
+                        },
+                        y: {
+                            title: { display: true, text: 'Variable Y', color: '#94A3B8' },
+                            grid: { color: 'rgba(51, 65, 85, 0.4)' },
+                            ticks: { color: '#94A3B8' }
+                        }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#E2E8F0', font: { family: 'Outfit' } } }
+                    }
+                }
+            });
+            updateLabGraph();
+        }
+
+        function setLabMode(mode) {
+            currentLabMode = mode;
+            ['both', 'directa', 'inversa'].forEach(m => {
+                const btn = document.getElementById(`btn-mode-${m}`);
+                if (m === mode) {
+                    btn.className = "px-3 py-1.5 rounded-lg bg-slate-800 text-white font-bold";
+                } else {
+                    btn.className = "px-3 py-1.5 rounded-lg text-slate-400 hover:text-white";
+                }
+            });
+            updateLabGraph();
+        }
+
+        function updateLabGraph() {
+            if (!labChart) return;
+            const k = parseFloat(document.getElementById('k-slider').value);
+            document.getElementById('k-val-display').innerText = `k = ${k}`;
+
+            const labels = [];
+            const dataDirecta = [];
+            const dataInversa = [];
+
+            for (let x = 1; x <= 12; x++) {
+                labels.push(`x=${x}`);
+                dataDirecta.push(k * x);
+                dataInversa.push(parseFloat((k / x).toFixed(2)));
+            }
+
+            labChart.data.labels = labels;
+            labChart.data.datasets[0].hidden = (currentLabMode === 'inversa');
+            labChart.data.datasets[1].hidden = (currentLabMode === 'directa');
+
+            labChart.data.datasets[0].data = dataDirecta;
+            labChart.data.datasets[1].data = dataInversa;
+            labChart.update();
+
+            document.getElementById('directa-calc-box').innerText = `Si x = 4 ⟹ y = ${k} • 4 = ${k * 4}`;
+            document.getElementById('inversa-calc-box').innerText = `Si x = 4 ⟹ y = ${k} / 4 = ${(k / 4).toFixed(1)}`;
+        }
+
+        function updateSimVisual() {
+            const v = parseFloat(document.getElementById('sim-v-slider').value);
+            const dist = 120;
+            const t = (dist / v).toFixed(2);
+            document.getElementById('sim-v-val').innerText = `${v} km/h`;
+            document.getElementById('sim-t-val').innerText = `${t} h`;
+        }
+
+        // --- SECCIÓN 2: CLASIFICADOR (4 PARES ORDENADOS) ---
+        let currentClassifierType = 'DIRECTA';
+        let currentK = 0;
+
+        function nextClassifierQuestion() {
+            const feedback = document.getElementById('classifier-feedback');
+            feedback.classList.add('hidden');
+
+            const isDirecta = Math.random() > 0.5;
+            currentClassifierType = isDirecta ? 'DIRECTA' : 'INVERSA';
+
+            const xVals = [2, 4, 6, 8];
+            let yVals = [];
+
+            if (isDirecta) {
+                currentK = [3, 5, 7, 9, 12, 15][Math.floor(Math.random() * 6)];
+                yVals = xVals.map(x => x * currentK);
+            } else {
+                currentK = [48, 72, 96, 120, 240][Math.floor(Math.random() * 5)];
+                yVals = xVals.map(x => currentK / x);
+            }
+
+            for (let i = 0; i < 4; i++) {
+                document.getElementById(`x-val-${i}`).innerText = xVals[i];
+                document.getElementById(`y-val-${i}`).innerText = yVals[i];
+            }
+        }
+
+        function checkClassification(userChoice) {
+            const feedback = document.getElementById('classifier-feedback');
+            feedback.classList.remove('hidden');
+
+            if (userChoice === currentClassifierType) {
+                playBeep('ok');
+                feedback.className = "p-4 rounded-2xl text-xs sm:text-sm font-semibold border bg-emerald-950/60 border-emerald-500/40 text-emerald-300";
+                feedback.innerHTML = `<i class="fa-solid fa-circle-check mr-2 text-emerald-400"></i> <strong>¡Correcto!</strong> Es una Proporcionalidad ${currentClassifierType === 'DIRECTA' ? 'Directa ($y/x = k$)' : 'Inversa ($x \\cdot y = k$)'}. Constante $k = ${currentK}$.`;
+            } else {
+                playBeep('err');
+                feedback.className = "p-4 rounded-2xl text-xs sm:text-sm font-semibold border bg-rose-950/60 border-rose-500/40 text-rose-300";
+                feedback.innerHTML = `<i class="fa-solid fa-circle-xmark mr-2 text-rose-400"></i> <strong>Incorrecto.</strong> Analiza si el cociente o el producto de los pares se mantiene constante.`;
+            }
+        }
+
+        // --- SECCIÓN 3: QUIZ RÁPIDO ---
+        const quizBank = [
+            { q: "Si 3 trabajadores tardan 12 días en construir una barda, ¿cuántos días tardarán 6 trabajadores trabajando al mismo ritmo?", type: "INVERSA", ans: "6 días", options: ["6 días", "24 días", "18 días", "4 días"] },
+            { q: "Un auto recorre 180 km en 2 horas a velocidad constante. ¿Cuántos kilómetros recorrerá en 5 horas?", type: "DIRECTA", ans: "450 km", options: ["360 km", "450 km", "540 km", "900 km"] },
+            { q: "Si 5 litros de pintura alcanzan para cubrir 40 metros cuadrados, ¿cuántos metros cuadrados se cubren con 8 litros?", type: "DIRECTA", ans: "64 m²", options: ["50 m²", "64 m²", "72 m²", "80 m²"] },
+            { q: "Para vaciar una alberca se usan 4 bombas que tardan 6 horas. Si se usan 8 bombas iguales, ¿cuánto tiempo tardarán?", type: "INVERSA", ans: "3 horas", options: ["12 horas", "3 horas", "4 horas", "2 horas"] }
+        ];
+        let currentQuizIdx = 0;
+
+        function nextQuizQuestion() {
+            const feedback = document.getElementById('quiz-feedback');
+            feedback.classList.add('hidden');
+
+            currentQuizIdx = Math.floor(Math.random() * quizBank.length);
+            const item = quizBank[currentQuizIdx];
+
+            document.getElementById('quiz-question-title').innerText = `Problema Aplicado (${item.type === 'DIRECTA' ? 'Directa' : 'Inversa'})`;
+            document.getElementById('quiz-question-text').innerText = item.q;
+
+            const optionsContainer = document.getElementById('quiz-options');
+            optionsContainer.innerHTML = '';
+
+            // Mezclar opciones
+            const shuffledOptions = [...item.options].sort(() => Math.random() - 0.5);
+
+            shuffledOptions.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "p-3.5 bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-indigo-500/50 rounded-xl text-xs sm:text-sm font-mono text-slate-200 transition-all text-center";
+                btn.innerText = opt;
+                btn.onclick = () => checkQuizAnswer(opt, item.ans);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function checkQuizAnswer(selected, correct) {
+            const feedback = document.getElementById('quiz-feedback');
+            feedback.classList.remove('hidden');
+
+            if (selected === correct) {
+                playBeep('ok');
+                feedback.className = "p-4 rounded-2xl text-xs sm:text-sm font-semibold border bg-emerald-950/60 border-emerald-500/40 text-emerald-300";
+                feedback.innerHTML = `<i class="fa-solid fa-circle-check mr-2 text-emerald-400"></i> <strong>¡Excelente!</strong> Respuesta correcta.`;
+            } else {
+                playBeep('err');
+                feedback.className = "p-4 rounded-2xl text-xs sm:text-sm font-semibold border bg-rose-950/60 border-rose-500/40 text-rose-300";
+                feedback.innerHTML = `<i class="fa-solid fa-circle-xmark mr-2 text-rose-400"></i> <strong>Incorrecto.</strong> La respuesta correcta era: <strong>${correct}</strong>.`;
+            }
+        }
+
+        // --- INICIALIZACIÓN AUTOMÁTICA AL CARGAR EL DOM ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initLabChart();
+        });
+    </script>
+</body>
+</html>

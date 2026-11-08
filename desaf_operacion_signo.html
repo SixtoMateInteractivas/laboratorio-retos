@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500 selection:text-white">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Duelo Algebraico 1v1 | Enteros y Signos</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        .rotate-player-1 {
+            transform: rotate(180deg);
+        }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.90);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 h-screen overflow-hidden flex flex-col justify-between select-none">
+
+    <!-- JUGADOR 1 (INVERTIDO 180° EN LA PARTE SUPERIOR) -->
+    <div class="h-1/2 bg-gradient-to-b from-rose-950/40 to-slate-900/60 border-b border-slate-800 p-3 flex flex-col justify-between rotate-player-1 relative overflow-y-auto">
+        <div class="flex justify-between items-center text-xs text-rose-300 font-bold px-2">
+            <span><i class="fa-solid fa-user-shield"></i> JUGADOR 1</span>
+            <span class="bg-rose-500/20 px-2.5 py-1 rounded-full border border-rose-500/30">Progreso: <strong id="p1-score">0</strong> / 20</span>
+        </div>
+
+        <div class="text-center space-y-2 my-auto">
+            <div id="p1-category" class="text-[10px] uppercase tracking-widest text-rose-400 font-mono font-bold">Modo: Preparación</div>
+            <div id="p1-question" class="font-mono text-2xl sm:text-3xl font-extrabold text-white tracking-wider">(-4) + (+2) - (-3) = ?</div>
+            <div id="p1-options" class="grid grid-cols-2 gap-2 max-w-xs mx-auto pt-1">
+                <!-- Opciones dinámicas J1 -->
+            </div>
+        </div>
+
+        <div class="text-center text-[10px] text-slate-500 font-mono">⚠️ ¡Un error reinicia tu cuenta a 0!</div>
+    </div>
+
+    <!-- LÍNEA DIVISORIA CENTRAL / ESTADO GLOBAL -->
+    <div class="bg-slate-900 py-1.5 px-3 flex justify-between items-center text-[11px] text-slate-400 border-y border-slate-800 z-10 gap-1">
+        <span class="font-bold text-indigo-400 hidden sm:inline"><i class="fa-solid fa-bolt"></i> DUELO ALGEBRAICO 1v1</span>
+        
+        <div class="flex items-center gap-2 mx-auto sm:mx-0">
+            <button onclick="toggleHowToPlay()" class="px-2.5 py-1 bg-indigo-900/50 hover:bg-indigo-800 text-indigo-200 rounded-lg border border-indigo-700/50 transition-all font-bold flex items-center gap-1.5">
+                <i class="fa-solid fa-circle-question text-indigo-400"></i> Instructivo
+            </button>
+            <button onclick="resetGame()" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition-all font-bold flex items-center gap-1.5">
+                <i class="fa-solid fa-rotate-right"></i> Reiniciar
+            </button>
+        </div>
+
+        <span class="font-mono text-amber-400 hidden sm:inline">Meta: 20 Aciertos</span>
+    </div>
+
+    <!-- JUGADOR 2 (EN LA PARTE INFERIOR) -->
+    <div class="h-1/2 bg-gradient-to-t from-cyan-950/40 to-slate-900/60 p-3 flex flex-col justify-between relative overflow-y-auto">
+        <div class="text-center text-[10px] text-slate-500 font-mono">⚠️ ¡Un error reinicia tu cuenta a 0!</div>
+
+        <div class="text-center space-y-2 my-auto">
+            <div id="p2-options" class="grid grid-cols-2 gap-2 max-w-xs mx-auto pb-1">
+                <!-- Opciones dinámicas J2 -->
+            </div>
+            <div id="p2-question" class="font-mono text-2xl sm:text-3xl font-extrabold text-white tracking-wider">(-4) + (+2) - (-3) = ?</div>
+            <div id="p2-category" class="text-[10px] uppercase tracking-widest text-cyan-400 font-mono font-bold">Modo: Preparación</div>
+        </div>
+
+        <div class="flex justify-between items-center text-xs text-cyan-300 font-bold px-2">
+            <span><i class="fa-solid fa-user-shield"></i> JUGADOR 2</span>
+            <span class="bg-cyan-500/20 px-2.5 py-1 rounded-full border border-cyan-500/30">Progreso: <strong id="p2-score">0</strong> / 20</span>
+        </div>
+    </div>
+
+    <!-- MODAL DE INSTRUCTIVO / CÓMO JUGAR -->
+    <div id="howto-modal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass-panel rounded-3xl p-5 max-w-md w-full space-y-4 border border-indigo-500/40 max-h-[90vh] overflow-y-auto text-left">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="font-display text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-gamepad text-indigo-400"></i> Instructivo del Juego
+                </h3>
+                <button onclick="toggleHowToPlay()" class="text-slate-400 hover:text-white text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3 text-xs text-slate-300 leading-relaxed">
+                <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                    <p class="font-bold text-amber-400 mb-1"><i class="fa-solid fa-trophy"></i> Objetivo del Duelo</p>
+                    <p>Sé el primero en alcanzar <strong>20 respuestas correctas seguidas</strong> para coronarte ganador del duelo frente a tu compañero.</p>
+                </div>
+
+                <div class="space-y-2">
+                    <p class="font-bold text-indigo-300"><i class="fa-solid fa-list-check"></i> Reglas de Juego:</p>
+                    <ul class="list-disc pl-4 space-y-1 text-slate-400">
+                        <li><strong>Modo 1v1 Presencial:</strong> Coloca el dispositivo (celular o tablet) sobre una mesa horizontalmente entre ambos jugadores.</li>
+                        <li><strong>Respuesta Correcta:</strong> Sumas 1 punto a tu marcador actual.</li>
+                        <li><strong>⚠️ Error de Cálculo:</strong> Si seleccionas una respuesta incorrecta, ¡tu marcador <strong>vuelve a 0</strong> acumulados!</li>
+                    </ul>
+                </div>
+
+                <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 space-y-1">
+                    <p class="font-bold text-emerald-400"><i class="fa-solid fa-brain"></i> Recordatorio de Signos:</p>
+                    <p class="text-[11px] text-slate-400"><strong>Suma/Resta:</strong> Signos iguales se suman y se conserva el signo. Signos diferentes se restan y prevalece el signo del mayor absoluto.</p>
+                    <p class="text-[11px] text-slate-400"><strong>Multiplicación/División:</strong> (+)(+) = + | (-)(-) = + | (+)(-) = - | (-)(+) = -</p>
+                </div>
+            </div>
+
+            <button onclick="toggleHowToPlay()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs transition-all shadow-lg">
+                ¡Entendido, Empezar Duelo!
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL DE VICTORIA -->
+    <div id="win-modal" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass-panel rounded-3xl p-6 max-w-md w-full text-center space-y-4 border border-indigo-500/40">
+            <div class="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-2xl mx-auto flex items-center justify-center text-3xl shadow-lg">
+                <i class="fa-solid fa-trophy"></i>
+            </div>
+            <h3 id="win-title" class="font-display text-2xl font-bold text-white">¡Jugador X Victorioso!</h3>
+            <p class="text-xs text-slate-300">Ha completado con éxito los 20 reactivos requeridos sin perder su racha.</p>
+            <button onclick="resetGame()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs transition-all shadow-lg">
+                Jugar Nueva Partida
+            </button>
+        </div>
+    </div>
+
+    <!-- SCRIPT DE CONTROL Y AUDIO NATIVO -->
+    <script>
+        // --- AUDIO NATIVO (SIN ARCHIVOS EXTERNOS) ---
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new AudioCtx();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playSound(type) {
+            try {
+                initAudio();
+                if (!audioCtx) return;
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                if (type === 'success') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.setValueAtTime(554.37, now + 0.1);
+                    osc.frequency.setValueAtTime(659.25, now + 0.2);
+                    osc.frequency.setValueAtTime(880, now + 0.3);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                    osc.start(now);
+                    osc.stop(now + 0.5);
+                } else if (type === 'win') {
+                    const notes = [523.25, 659.25, 783.99, 1046.50];
+                    notes.forEach((freq, i) => {
+                        const o = audioCtx.createOscillator();
+                        const g = audioCtx.createGain();
+                        o.type = 'triangle';
+                        o.frequency.setValueAtTime(freq, now + i * 0.15);
+                        g.gain.setValueAtTime(0.2, now + i * 0.15);
+                        g.gain.exponentialRampToValueAtTime(0.01, now + i * 0.15 + 0.3);
+                        o.connect(g);
+                        g.connect(audioCtx.destination);
+                        o.start(now + i * 0.15);
+                        o.stop(now + i * 0.15 + 0.3);
+                    });
+                } else {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(160, now);
+                    osc.frequency.linearRampToValueAtTime(80, now + 0.3);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                }
+            } catch(e){}
+        }
+
+        // --- ESTADO DE JUEGO ---
+        let gameState = {
+            p1: { score: 0, currentQ: null },
+            p2: { score: 0, currentQ: null }
+        };
+
+        function randInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function toggleHowToPlay() {
+            const modal = document.getElementById('howto-modal');
+            modal.classList.toggle('hidden');
+        }
+
+        function generateQuestion(forcedType = null) {
+            const types = ['sum', 'sub', 'mul', 'div'];
+            const type = forcedType || types[Math.floor(Math.random() * types.length)];
+            
+            const numCount = Math.random() > 0.5 ? 2 : 3;
+            let nums = [];
+            for(let i=0; i<numCount; i++) {
+                let n = randInt(-9, 9);
+                if(n === 0) n = 1;
+                nums.push(n);
+            }
+
+            let text = "";
+            let ans = 0;
+            let typeLabel = "";
+
+            if (type === 'sum') {
+                typeLabel = "➕ Suma de Enteros";
+                if (numCount === 2) {
+                    ans = nums[0] + nums[1];
+                    text = `(${nums[0] >= 0 ? '+' + nums[0] : nums[0]}) + (${nums[1] >= 0 ? '+' + nums[1] : nums[1]}) = ?`;
+                } else {
+                    ans = nums[0] + nums[1] + nums[2];
+                    text = `(${nums[0] >= 0 ? '+' + nums[0] : nums[0]}) + (${nums[1] >= 0 ? '+' + nums[1] : nums[1]}) + (${nums[2] >= 0 ? '+' + nums[2] : nums[2]}) = ?`;
+                }
+            } else if (type === 'sub') {
+                typeLabel = "➖ Resta de Enteros";
+                if (numCount === 2) {
+                    ans = nums[0] - nums[1];
+                    text = `(${nums[0] >= 0 ? '+' + nums[0] : nums[0]}) - (${nums[1] >= 0 ? '+' + nums[1] : nums[1]}) = ?`;
+                } else {
+                    ans = nums[0] - nums[1] - nums[2];
+                    text = `(${nums[0] >= 0 ? '+' + nums[0] : nums[0]}) - (${nums[1] >= 0 ? '+' + nums[1] : nums[1]}) - (${nums[2] >= 0 ? '+' + nums[2] : nums[2]}) = ?`;
+                }
+            } else if (type === 'mul') {
+                typeLabel = "✖️ Multiplicación";
+                nums = nums.map(n => randInt(-5, 5));
+                if(nums.includes(0)) nums[0] = 2;
+                if (numCount === 2) {
+                    ans = nums[0] * nums[1];
+                    text = `(${nums[0] >= 0 ? '+' + nums[0] : nums[0]}) × (${nums[1] >= 0 ? '+' + nums[1] : nums[1]}) = ?`;
+                } else {
+                    ans = nums[0] * nums[1] * nums[2];
+                    text = `(${nums[0] >= 0 ? '+' + nums[0] : nums[0]}) × (${nums[1] >= 0 ? '+' + nums[1] : nums[1]}) × (${nums[2] >= 0 ? '+' + nums[2] : nums[2]}) = ?`;
+                }
+            } else {
+                typeLabel = "➗ División Exacta";
+                let divisor = randInt(-4, 4);
+                if(divisor === 0) divisor = 2;
+                let cociente = randInt(-5, 5);
+                if(cociente === 0) cociente = 3;
+                let dividendo = divisor * cociente;
+                ans = cociente;
+                text = `(${dividendo >= 0 ? '+' + dividendo : dividendo}) ÷ (${divisor >= 0 ? '+' + divisor : divisor}) = ?`;
+            }
+
+            let options = new Set([ans]);
+            while(options.size < 4) {
+                let offset = randInt(-4, 4);
+                if(offset !== 0) options.add(ans + offset);
+            }
+
+            return {
+                text,
+                ans,
+                typeLabel,
+                options: Array.from(options).sort(() => Math.random() - 0.5)
+            };
+        }
+
+        function loadQuestion(player) {
+            const qData = generateQuestion();
+            gameState[player].currentQ = qData;
+
+            document.getElementById(`${player}-question`).innerText = qData.text;
+            document.getElementById(`${player}-category`).innerText = qData.typeLabel;
+
+            const optsContainer = document.getElementById(`${player}-options`);
+            optsContainer.innerHTML = '';
+
+            qData.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl font-mono text-sm font-bold text-slate-100 shadow";
+                let displayOpt = opt >= 0 ? `+${opt}` : `${opt}`;
+                btn.innerText = displayOpt;
+                btn.onclick = () => checkAnswer(player, opt);
+                optsContainer.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(player, selected) {
+            const q = gameState[player].currentQ;
+            if (selected === q.ans) {
+                playSound('success');
+                gameState[player].score++;
+                document.getElementById(`${player}-score`).innerText = gameState[player].score;
+
+                if (gameState[player].score >= 20) {
+                    triggerWin(player);
+                    return;
+                }
+            } else {
+                playSound('error');
+                gameState[player].score = 0;
+                document.getElementById(`${player}-score`).innerText = 0;
+            }
+            loadQuestion(player);
+        }
+
+        function triggerWin(player) {
+            playSound('win');
+            const name = player === 'p1' ? 'JUGADOR 1 (Arriba)' : 'JUGADOR 2 (Abajo)';
+            document.getElementById('win-title').innerText = `¡${name} GANA EL DUELO! 🎉`;
+            document.getElementById('win-modal').classList.remove('hidden');
+        }
+
+        function resetGame() {
+            gameState.p1.score = 0;
+            gameState.p2.score = 0;
+            document.getElementById('p1-score').innerText = 0;
+            document.getElementById('p2-score').innerText = 0;
+            document.getElementById('win-modal').classList.add('hidden');
+            loadQuestion('p1');
+            loadQuestion('p2');
+        }
+
+        window.onload = () => {
+            resetGame();
+        };
+    </script>
+</body>
+</html>
